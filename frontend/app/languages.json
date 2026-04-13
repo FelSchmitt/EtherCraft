@@ -1,0 +1,26 @@
+{
+    "en-US": {
+        "general_loading": "LOADING...",
+        "home_login": "LOGIN",
+        "home_or": "or",
+        "home_register": "REGISTER",
+        "login_error1": "ID not found. Check if it's written correctly",
+        "login_error2": "Wrong Password. Check it!",
+        "userspace_profile_label": "Profile",
+        "userspace_decks_label": "Your Decks",
+        "userspace_match_label": "Find Match",
+        "userspace_matches_classic_name": "Classic Mode"
+    },
+    "pt-BR": {
+        "general_loading": "CARREGANDO...",
+        "home_login": "ENTRE",
+        "home_or": "ou",
+        "home_register": "CADASTRE-SE",
+        "login_error1": "ID não encontrado. Certifique-se de ter escrito certo",
+        "login_error2": "Senha incorreta. Verifique!",
+        "userspace_profile_label": "Perfil",
+        "userspace_decks_label": "Seus Decks",
+        "userspace_match_label": "Partida",
+        "userspace_matches_classic_name": "Modo Clássico"
+    }
+}

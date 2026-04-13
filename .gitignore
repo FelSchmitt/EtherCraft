@@ -1,0 +1,20 @@
+# dependencies
+**/node_modules/
+
+.env
+login.txt
+/backend/assets/users/*.png
+
+# next.js
+.next/
+out/
+
+# production
+**/build/
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
