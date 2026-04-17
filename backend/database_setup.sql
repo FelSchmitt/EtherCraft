@@ -1,5 +1,7 @@
 --To set the database structure with PostgreSQL
 
+create database ethercraft
+
 create table users (
   account_id varchar(20) primary key,
   password varchar(45) not null,

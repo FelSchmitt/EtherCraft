@@ -36,14 +36,14 @@ const pool = new Pool({
 
 expressServer.use(cors(corsConfig), cookieParser(), express.json(), express.static('./assets'))
 
-async function verifyToken(req, res, next) {
+async function verifyToken(req, res, next) {//currently unused
     try {
         if (!req.body.access) {
             res.status(401).send({ message: 'not authorized' })
         }
         else {
             jwt.verify(req.body.access, process.env.SECRET_KEY)
-            
+
             const decodedToken = jwt.decode(req.body.access)
             const checkUserQuery = await pool.query(`select account_id from users where access_token = '${decodedToken.access_token}'`)
 
@@ -63,7 +63,7 @@ async function verifyToken(req, res, next) {
 
 
 
-let oponentsQueue = []
+let opponentsQueue = []
 
 
 
@@ -166,34 +166,39 @@ expressServer.post('/login/validatefields', async (req, res) => {
 
 
 
-expressServer.post('/matches/searchopponent', verifyToken, async (req, res) => {
-    try {
-        oponentsQueue.push(req.user_id)
-        console.log(oponentsQueue)
-
-        res.send({ message: 'id do usuário adicionado à fila de espera' })
-    }
-    catch (error) {
-        res.status(500).send({ serverError: error })
-        console.log(error)
-    }
-})
-
-
-
 
 
 
 socketServer.on('connection', (client) => {
-    console.log(`usuário ${client.id} conectou`)
-
-    client.on('chat', (message) => {
-        console.log(`Mensagem do frontend: ${message.text}`)
-        socketServer.emit('chat', {sender: message.sender, color: '#1cbe00', text: message.text})
-    })
+    console.log(`user ${client.id} connected`)
 
     client.on('disconnect', (client) => {
-        console.log(`usuário ${client.id} desconectou`)
+        console.log(`user ${client.id} disconnected`)
+    })
+
+    client.on('chat', (message) => {
+        console.log(`Message from frontend: ${message.text}`)
+        socketServer.emit('chat', { sender: message.sender, color: '#1cbe00', text: message.text })
+    })
+
+
+
+    client.on('find_opponent', (message) => {
+        opponentsQueue.push({ id: message.user_id, socketId: client.id })//currently simply adds the id of the user from the frontend to the queue. Later will be added a middleware to verify the identity
+
+        if (opponentsQueue.length >= 2) {
+            const player1 = opponentsQueue.shift()
+            const player2 = opponentsQueue.shift()
+
+            socketServer.in(player1.socketId).socketsJoin('test_room')
+            socketServer.in(player2.socketId).socketsJoin('test_room')
+        }
+    })
+
+    client.on('build_scene', async () => {
+        const sessionQuery = await pool.query(`select * from active_sessions where session_id = 'test_match'`)
+
+        socketServer.emit('scene_add_objects', sessionQuery.rows[0])
     })
 })
 
@@ -202,11 +207,12 @@ socketServer.on('connection', (client) => {
 
 
 
-const matchMaker = setInterval(() => {
-    oponentsQueue.forEach(player => {
-    })
-}, 2000)
+// const queueCounter = setInterval(() => {
+//     opponentsQueue.forEach(player => {
+//         player.waitingTime += 2
+//     })
+// }, 2000)
 
 server.listen(3001, () => {
-    console.log('servidor backend rodando em http://localhost:3001')
+    console.log('backend server running on http://localhost:3001')
 })
