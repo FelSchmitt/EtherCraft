@@ -3,6 +3,15 @@
 import { useRouter } from "next/navigation"
 import { FormEvent } from "react"
 
+type accountObject = {
+  access: string,
+  account_id: string,
+  user_nickname: string,
+  cards: Object[],
+  decks: Object[]
+}
+
+
 export default function LoginPage() {
   const router = useRouter()
 
@@ -40,8 +49,8 @@ export default function LoginPage() {
       localStorage.setItem('access', response.access)
       localStorage.setItem('id', response.account_id)
       localStorage.setItem('nickname', response.user_nickname)
-      localStorage.setItem('cards', response.cards)
-      localStorage.setItem('decks', response.decks)
+      localStorage.setItem('cards', JSON.stringify(response.cards))
+      localStorage.setItem('decks', JSON.stringify(response.decks))
       router.push('/userspace')
     }
   }

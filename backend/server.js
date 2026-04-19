@@ -45,13 +45,13 @@ async function verifyToken(req, res, next) {//currently unused
             jwt.verify(req.body.access, process.env.SECRET_KEY)
 
             const decodedToken = jwt.decode(req.body.access)
-            const checkUserQuery = await pool.query(`select account_id from users where access_token = '${decodedToken.access_token}'`)
+            const checkUserQuery = await pool.query(`select * from users where access_token = '${decodedToken.access_token}'`)
 
             if (checkUserQuery.rowCount === 0) {
                 res.status(401).send({ message: 'user does not exist' })
             }
             else {
-                req.user_id = checkUserQuery.rows[0].account_id
+                req.user_data = checkUserQuery.rows[0]
                 next()
             }
         }
@@ -63,10 +63,12 @@ async function verifyToken(req, res, next) {//currently unused
 
 
 
+
+
+
 let opponentsQueue = []
 
-
-
+let activeMatches = []
 
 
 
@@ -183,22 +185,57 @@ socketServer.on('connection', (client) => {
 
 
 
-    client.on('find_opponent', (message) => {
-        opponentsQueue.push({ id: message.user_id, socketId: client.id })//currently simply adds the id of the user from the frontend to the queue. Later will be added a middleware to verify the identity
+    client.on('find_opponent', (identifiers) => {
+        opponentsQueue.push({ id: identifiers.id, socketId: client.id, nickname: identifiers.nickname })
 
         if (opponentsQueue.length >= 2) {
-            const player1 = opponentsQueue.shift()
-            const player2 = opponentsQueue.shift()
+            const playersIds = [opponentsQueue.shift(), opponentsQueue.shift()]
+            const matchId = `match_${Date.now()}_${Math.round(Math.random() * 100)}`
 
-            socketServer.in(player1.socketId).socketsJoin('test_room')
-            socketServer.in(player2.socketId).socketsJoin('test_room')
+            socketServer.to([playersIds[0].socketId, playersIds[1].socketId]).socketsJoin(matchId)
+
+            activeMatches.push(
+                {
+                    current_turn_player_id: playersIds[Math.round(Math.random())],
+                    players_hand_cards: [
+                        { player: playersIds[0].id, card_id: 'giant_serpent' },
+                        { player: playersIds[0].id, card_id: 'wendigo' },
+                        { player: playersIds[1].id, card_id: 'giant_serpent' },
+                        { player: playersIds[1].id, card_id: 'undead_army' }
+                    ],
+                    players_ids: playersIds,
+                    players_lifes: [10, 10],
+                    players_mana_levels: [1, 1],
+                    players_table_cards: null,
+                    match_id: matchId,
+                    start_time: (new Date()).toISOString(),
+                    total_turns_count: 0
+                }
+            )
+
+            playersIds.forEach((player, index) => {
+                socketServer.to(playersIds[index].socketId).emit('build_scene',
+                    {
+                        hand_cards: [
+                            { card_id: 'giant_serpent' },
+                            { card_id: 'wendigo' },
+                            { card_id: 'undead_army' },
+                        ],
+                        table_cards: null,
+                        life: 10,
+                        mana_level: 1,
+                        opponent: {
+                            hand_cards: 3,
+                            table_cards: null,
+                            id: playersIds[index == 0 ? 1 : 0].id,
+                            nickname: playersIds[index == 0 ? 1 : 0].nickname,
+                            life: 10,
+                            mana_level: 1
+                        }
+                    }
+                )
+            })
         }
-    })
-
-    client.on('build_scene', async () => {
-        const sessionQuery = await pool.query(`select * from active_sessions where session_id = 'test_match'`)
-
-        socketServer.emit('scene_add_objects', sessionQuery.rows[0])
     })
 })
 

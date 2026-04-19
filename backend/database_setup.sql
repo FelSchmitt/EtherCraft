@@ -31,15 +31,3 @@ create table game_decks (
   name varchar(40) not null,
   card_ids varchar(20)[] not null
 )
-
-create table active_sessions (
-  session_id varchar(10) primary key,
-  start_time timestamp not null,
-  players_ids varchar(20)[] not null,
-  players_lifes int[] not null,
-  players_mana_levels int[] not null,
-  players_hand_cards jsonb[],
-  players_table_cards jsonb[],
-  current_turn_player_id varchar(20) not null,
-  total_turns_count int not null
-)
