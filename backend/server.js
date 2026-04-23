@@ -183,8 +183,6 @@ socketServer.on('connection', (client) => {
         socketServer.emit('chat', { sender: message.sender, color: '#1cbe00', text: message.text })
     })
 
-
-
     client.on('find_opponent', (identifiers) => {
         opponentsQueue.push({ id: identifiers.id, socketId: client.id, nickname: identifiers.nickname })
 
@@ -200,8 +198,10 @@ socketServer.on('connection', (client) => {
                     players_hand_cards: [
                         { player: playersIds[0].id, card_id: 'giant_serpent' },
                         { player: playersIds[0].id, card_id: 'wendigo' },
+                        { player: playersIds[0].id, card_id: 'undead_army' },
                         { player: playersIds[1].id, card_id: 'giant_serpent' },
-                        { player: playersIds[1].id, card_id: 'undead_army' }
+                        { player: playersIds[1].id, card_id: 'wendigo' },
+                        { player: playersIds[1].id, card_id: 'undead_army' },
                     ],
                     players_ids: playersIds,
                     players_lifes: [10, 10],
@@ -214,7 +214,7 @@ socketServer.on('connection', (client) => {
             )
 
             playersIds.forEach((player, index) => {
-                socketServer.to(playersIds[index].socketId).emit('build_scene',
+                socketServer.to(playersIds[index].socketId).emit('build_match',
                     {
                         hand_cards: [
                             { card_id: 'giant_serpent' },
@@ -234,8 +234,32 @@ socketServer.on('connection', (client) => {
                         }
                     }
                 )
+
+                socketServer.to(playersIds[index].socketId).emit(
+                    'chat',
+                    { sender: 'Server', color: '#ffee00', text: `You joined the match ${matchId} with ${playersIds[index == 0 ? 1 : 0].nickname}` }
+                )
             })
         }
+    })
+
+
+
+    client.on('clear_waiting_queue', (message) => {
+        opponentsQueue.splice(0)
+        socketServer.emit('chat', { sender: 'Server', color: '#ffee00', text: 'The opponents waiting queue was cleared' })
+    })
+
+    client.on('delete_all_matches', (message) => {
+        activeMatches.forEach((match, index) => {
+            socketServer.to([activeMatches[index].players_ids[0].socketId, activeMatches[index].players_ids[1].socketId]).socketsLeave(activeMatches[index].match_id)
+            socketServer.to([activeMatches[index].players_ids[0].socketId, activeMatches[index].players_ids[1].socketId]).emit(
+                'chat',
+                { sender: 'Server', color: '#ffee00', text: `You left the match ${matchId}` }
+            )
+        })
+
+        activeMatches.splice(0)
     })
 })
 
