@@ -1,0 +1,2 @@
+function calculateHandCardPositions(handCardsNumber: number) {
+}
