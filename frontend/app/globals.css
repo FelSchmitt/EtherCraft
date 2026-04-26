@@ -27,10 +27,11 @@
   border: 4px solid red
 }
 
-@media (width >= 768px) {
+@media (width >=768px) {
   #side-menu.closed {
     right: 97%;
   }
+
   #side-menu.closed #side-menu-button {
     rotate: 180deg;
   }
@@ -63,6 +64,11 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
+  cursor: pointer;
+}
+
+.tools-menu-option:hover {
+  background-color: #666;
 }
 
 .tools-menu-image {

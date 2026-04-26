@@ -3,7 +3,7 @@ import { Socket } from 'socket.io-client'
 import { GLTFLoader } from 'three/examples/jsm/Addons.js'
 
 export type matchObject = {
-    hand_cards: { card_id: string }[],
+    hand_cards: { card_id: string, uuid: string }[],
     table_cards: { card_id: string }[] | null,
     life: number,
     mana_level: number,
@@ -38,31 +38,33 @@ export function sendChatMessage(socket: Socket) {
 
 
 
-export function receiveChatmessage(message: chatMessage) {
-    console.log(`Message from backend: ${message}`)
+export function receiveChatMessage(message: chatMessage) {
     const chat = document.getElementById('test-chat') as HTMLDivElement
     chat.innerHTML += `<p class="mb-2"><span style="color: ${message.color}; font-weight: 700">${message.sender}:</span>${message.text}</p>`
 }
 
 
 
-export function receiveMatchObject(match: matchObject, scene: Scene, loader: GLTFLoader, textureLoader: TextureLoader) {
+export function receiveAndDisplayMatchObject(match: matchObject, scene: Scene, loader: GLTFLoader, textureLoader: TextureLoader) {
     match.hand_cards.forEach((card, index) => {
         loader.load(
             'models/card.glb',
             function (gltf) {
                 const cardModel: any = gltf.scene.children[0]
                 const cardTexture = textureLoader.load(`http://localhost:3001/cards/${card.card_id}.png`)
-                cardTexture.flipY = true
 
                 cardModel.children[2].material.map = cardTexture
                 cardModel.position.x = -14
-                cardModel.position.y = 16
-                cardModel.position.z = Math.floor(match.hand_cards.length / 2) * -4 + index * 4
+                cardModel.position.y = 14
+                cardModel.position.z = Math.floor(match.hand_cards.length / 2) * -3 + index * 3
                 cardModel.rotateY(3.14)
                 cardModel.rotateZ(1.2)
+                cardModel.userData.name = card.card_id
+                cardModel.userData.place = 'hand'
+                cardModel.userData.uuid = card.uuid
 
                 scene.add(cardModel)
+                console.log(cardModel)
             },
             function (progress) { },
             function (error) {
@@ -79,7 +81,7 @@ export function receiveMatchObject(match: matchObject, scene: Scene, loader: GLT
                 const cardModel = gltf.scene.children[0]
 
                 cardModel.position.x = 14
-                cardModel.position.y = 16
+                cardModel.position.y = 14
                 cardModel.position.z = Math.floor(match.opponent.hand_cards / 2) * -4 + i * 4
 
                 scene.add(cardModel)

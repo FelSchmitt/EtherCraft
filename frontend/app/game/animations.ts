@@ -1,7 +1,7 @@
 import { Object3D } from 'three'
 
 export function selectAnimation(object: Object3D) {
-    const positions = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5]
+    const positions = [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, -0.1, -0.1, -0.1, -0.1, -0.1, -0.1, -0.1]
     let frame = 0
 
     function execute() {

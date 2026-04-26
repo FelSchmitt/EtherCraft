@@ -9,7 +9,7 @@
         "userspace_profile_label": "Profile",
         "userspace_decks_label": "Your Decks",
         "userspace_match_label": "Find Match",
-        "userspace_matches_classic_name": "Classic Mode"
+        "userspace_matches_classic_label": "Classic Mode"
     },
     "pt-BR": {
         "general_loading": "CARREGANDO...",
@@ -21,6 +21,6 @@
         "userspace_profile_label": "Perfil",
         "userspace_decks_label": "Seus Decks",
         "userspace_match_label": "Partida",
-        "userspace_matches_classic_name": "Modo Clássico"
+        "userspace_matches_classic_label": "Modo Clássico"
     }
 }

@@ -171,11 +171,16 @@ expressServer.post('/login/validatefields', async (req, res) => {
 
 
 
+function generateCardUuid() {
+    return `${activeMatches.length}-${Date.now() + Math.round(Math.random() * 1000000)}-${Math.round(Math.random() * 100)}`
+}
+
+
 socketServer.on('connection', (client) => {
-    console.log(`user ${client.id} connected`)
+    console.log(`client ${client.id} connected`)
 
     client.on('disconnect', (client) => {
-        console.log(`user ${client.id} disconnected`)
+        console.log(`client ${client.id} disconnected`)
     })
 
     client.on('chat', (message) => {
@@ -183,26 +188,27 @@ socketServer.on('connection', (client) => {
         socketServer.emit('chat', { sender: message.sender, color: '#1cbe00', text: message.text })
     })
 
+
+
     client.on('find_opponent', (identifiers) => {
         opponentsQueue.push({ id: identifiers.id, socketId: client.id, nickname: identifiers.nickname })
 
         if (opponentsQueue.length >= 2) {
             const playersIds = [opponentsQueue.shift(), opponentsQueue.shift()]
-            const matchId = `match_${Date.now()}_${Math.round(Math.random() * 100)}`
-
-            socketServer.to([playersIds[0].socketId, playersIds[1].socketId]).socketsJoin(matchId)
+            const matchId = `match-${Date.now()}-${Math.round(Math.random() * 100)}`
+            const playersHandCards = [
+                { player: playersIds[0].id, card_id: 'giant_serpent', uuid: generateCardUuid() },
+                { player: playersIds[0].id, card_id: 'wendigo', uuid: generateCardUuid() },
+                { player: playersIds[0].id, card_id: 'undead_army', uuid: generateCardUuid() },
+                { player: playersIds[1].id, card_id: 'giant_serpent', uuid: generateCardUuid() },
+                { player: playersIds[1].id, card_id: 'wendigo', uuid: generateCardUuid() },
+                { player: playersIds[1].id, card_id: 'undead_army', uuid: generateCardUuid() },
+            ]
 
             activeMatches.push(
                 {
                     current_turn_player_id: playersIds[Math.round(Math.random())],
-                    players_hand_cards: [
-                        { player: playersIds[0].id, card_id: 'giant_serpent' },
-                        { player: playersIds[0].id, card_id: 'wendigo' },
-                        { player: playersIds[0].id, card_id: 'undead_army' },
-                        { player: playersIds[1].id, card_id: 'giant_serpent' },
-                        { player: playersIds[1].id, card_id: 'wendigo' },
-                        { player: playersIds[1].id, card_id: 'undead_army' },
-                    ],
+                    players_hand_cards: playersHandCards,
                     players_ids: playersIds,
                     players_lifes: [10, 10],
                     players_mana_levels: [1, 1],
@@ -213,14 +219,12 @@ socketServer.on('connection', (client) => {
                 }
             )
 
+            socketServer.to([playersIds[0].socketId, playersIds[1].socketId]).socketsJoin(matchId)
+
             playersIds.forEach((player, index) => {
-                socketServer.to(playersIds[index].socketId).emit('build_match',
+                socketServer.to(player.socketId).emit('build_match',
                     {
-                        hand_cards: [
-                            { card_id: 'giant_serpent' },
-                            { card_id: 'wendigo' },
-                            { card_id: 'undead_army' },
-                        ],
+                        hand_cards: playersHandCards.filter(card => card.player == player.id),
                         table_cards: null,
                         life: 10,
                         mana_level: 1,
@@ -255,7 +259,7 @@ socketServer.on('connection', (client) => {
             socketServer.to([activeMatches[index].players_ids[0].socketId, activeMatches[index].players_ids[1].socketId]).socketsLeave(activeMatches[index].match_id)
             socketServer.to([activeMatches[index].players_ids[0].socketId, activeMatches[index].players_ids[1].socketId]).emit(
                 'chat',
-                { sender: 'Server', color: '#ffee00', text: `You left the match ${matchId}` }
+                { sender: 'Server', color: '#ffee00', text: `You left the match ${match.match_id}` }
             )
         })
 
