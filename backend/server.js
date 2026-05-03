@@ -171,9 +171,14 @@ expressServer.post('/login/validatefields', async (req, res) => {
 
 
 
+
+
+
+
 function generateCardUuid() {
     return `${activeMatches.length}-${Date.now() + Math.round(Math.random() * 1000000)}-${Math.round(Math.random() * 100)}`
 }
+
 
 
 socketServer.on('connection', (client) => {
@@ -195,14 +200,13 @@ socketServer.on('connection', (client) => {
 
         if (opponentsQueue.length >= 2) {
             const playersIds = [opponentsQueue.shift(), opponentsQueue.shift()]
-            const matchId = `match-${Date.now()}-${Math.round(Math.random() * 100)}`
             const playersHandCards = [
                 { player: playersIds[0].id, card_id: 'giant_serpent', uuid: generateCardUuid() },
                 { player: playersIds[0].id, card_id: 'wendigo', uuid: generateCardUuid() },
-                { player: playersIds[0].id, card_id: 'undead_army', uuid: generateCardUuid() },
+                { player: playersIds[0].id, card_id: 'shadow_demon', uuid: generateCardUuid() },
                 { player: playersIds[1].id, card_id: 'giant_serpent', uuid: generateCardUuid() },
                 { player: playersIds[1].id, card_id: 'wendigo', uuid: generateCardUuid() },
-                { player: playersIds[1].id, card_id: 'undead_army', uuid: generateCardUuid() },
+                { player: playersIds[1].id, card_id: 'shadow_demon', uuid: generateCardUuid() },
             ]
 
             activeMatches.push(
@@ -213,7 +217,7 @@ socketServer.on('connection', (client) => {
                     players_lifes: [10, 10],
                     players_mana_levels: [1, 1],
                     players_table_cards: null,
-                    match_id: matchId,
+                    match_id: `match-${Date.now()}-${Math.round(Math.random() * 100)}`,
                     start_time: (new Date()).toISOString(),
                     total_turns_count: 0
                 }
@@ -245,6 +249,9 @@ socketServer.on('connection', (client) => {
                 )
             })
         }
+    })
+
+    client.on('move_request', (request) => {
     })
 
 

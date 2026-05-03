@@ -10,7 +10,7 @@ export default function ProfileDecks({ cards, decks }: AccountCardsData) {
                         {
                             cards.filter((card) => card.belongs_to_decks.includes(deck.deck_id)).map((card) => (
                                 <li key={card.card_number} className="w-45 flex flex-col items-center font-serif mr-6">
-                                    <img src={`http://localhost:3001/cards/${card.card_id}.png`} alt="Imagem da Frente da Carta" />
+                                    <img src={`http://localhost:3001/cards/${card.card_id}.png`} alt="Front Card Image" />
                                     <p>{card.name}</p>
                                 </li>
                             ))

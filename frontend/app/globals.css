@@ -81,3 +81,21 @@
   color: white;
   font-size: 10px;
 }
+
+#chat-container {
+  transition: all 0.3s;
+  right: 80%;
+}
+
+#chat-container.closed {
+  right: 98%;
+}
+
+#test-tools {
+  bottom: 89%;
+  transition: all 0.3s;
+}
+
+#test-tools.closed {
+  bottom: 99%;
+}

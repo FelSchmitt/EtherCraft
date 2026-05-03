@@ -1,4 +1,4 @@
-import { Scene, TextureLoader } from 'three'
+import { Scene, TextureLoader, Group, Object3D, Object3DEventMap } from 'three'
 import { Socket } from 'socket.io-client'
 import { GLTFLoader } from 'three/examples/jsm/Addons.js'
 
@@ -40,7 +40,9 @@ export function sendChatMessage(socket: Socket) {
 
 export function receiveChatMessage(message: chatMessage) {
     const chat = document.getElementById('test-chat') as HTMLDivElement
+    const chatContainer = document.getElementById('chat-container') as HTMLDivElement
     chat.innerHTML += `<p class="mb-2"><span style="color: ${message.color}; font-weight: 700">${message.sender}:</span>${message.text}</p>`
+    chatContainer.classList.remove('closed')
 }
 
 
@@ -57,14 +59,15 @@ export function receiveAndDisplayMatchObject(match: matchObject, scene: Scene, l
                 cardModel.position.x = -14
                 cardModel.position.y = 14
                 cardModel.position.z = Math.floor(match.hand_cards.length / 2) * -3 + index * 3
+                cardModel.rotateX(3.14)
                 cardModel.rotateY(3.14)
-                cardModel.rotateZ(1.2)
+                cardModel.rotateZ(-1.1)
                 cardModel.userData.name = card.card_id
                 cardModel.userData.place = 'hand'
                 cardModel.userData.uuid = card.uuid
+                cardModel.userData.owner = localStorage.getItem('id')
 
                 scene.add(cardModel)
-                console.log(cardModel)
             },
             function (progress) { },
             function (error) {
@@ -83,6 +86,7 @@ export function receiveAndDisplayMatchObject(match: matchObject, scene: Scene, l
                 cardModel.position.x = 14
                 cardModel.position.y = 14
                 cardModel.position.z = Math.floor(match.opponent.hand_cards / 2) * -4 + i * 4
+                cardModel.rotateZ(1.1)
 
                 scene.add(cardModel)
             },

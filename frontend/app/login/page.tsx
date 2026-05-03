@@ -60,12 +60,12 @@ export default function LoginPage() {
       <form onSubmit={sendData} className="border-(--gold) border-4 rounded-[10px] bg-(--gray) flex flex-col justify-evenly items-center p-3 h-[50vh]">
         <img src="/images/logo.png" width={100} alt="Logo" />
         <div id="account-id" className="fielddiv flex flex-col">
-          <input type="text" name="account_id" placeholder="ID ou Email da Conta..." className="bg-white w-67.5 md:w-80 h-7.5" />
+          <input type="text" name="account_id" placeholder="Email or Account ID..." className="bg-white w-67.5 md:w-80 h-7.5" />
         </div>
         <div id="password" className="fielddiv flex flex-col">
-          <input type="password" name="password" placeholder="Senha..." className="bg-white w-67.5 md:w-80 h-7.5" />
+          <input type="password" name="password" placeholder="Password..." className="bg-white w-67.5 md:w-80 h-7.5" />
         </div>
-        <button type="submit" className="border-(--gold) border-4 rounded-[7px] bg-(--goldgray) text-white p-2 text-[15px] font-bold transition-all duration-300 hover:bg-(--darkgoldgray) cursor-pointer">ENTRAR</button>
+        <button type="submit" className="border-(--gold) border-4 rounded-[7px] bg-(--goldgray) text-white p-2 text-[15px] font-bold transition-all duration-300 hover:bg-(--darkgoldgray) cursor-pointer">ENTER</button>
       </form>
     </main>
   )

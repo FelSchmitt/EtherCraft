@@ -5,6 +5,9 @@
 login.txt
 /backend/assets/users/*.png
 
+# duplicated blender projects
+*.blend1
+
 # next.js
 .next/
 out/

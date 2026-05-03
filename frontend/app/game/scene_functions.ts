@@ -1,7 +1,7 @@
-import { Scene, AmbientLight } from 'three'
+import { Scene, Light } from 'three'
 import { GLTFLoader } from 'three/examples/jsm/Addons.js'
 
-export function resetScene(scene: Scene, loader: GLTFLoader, light: AmbientLight) {
+export function resetScene(scene: Scene, loader: GLTFLoader, light: Light) {
     scene.children.splice(0)
 
     loader.load(
