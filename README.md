@@ -2,7 +2,7 @@
 <br />
 <br />
 
-<h2 align="center">A Huge, Full Stack Project</h2>
+<h2 align="center">A Full Stack Project</h2>
 
 <p align="center">Ethercraft is a complete fantasy game about duels with an opponent in a board with cards (and a tavern background scenery), in a very RPG style, that was heavily inspired by the original game <a style="color: aqua; font-weight: bold" href="https://hearthstone.blizzard.com/en-us">HEARTHSTONE</a> by Blizzard Entertainment.</p>
 <br />

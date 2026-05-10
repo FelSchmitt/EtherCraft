@@ -7,7 +7,6 @@ import { GLTFLoader } from 'three/examples/jsm/Addons.js'
 import { io } from 'socket.io-client'
 import * as channels from './socket_channels'
 import { setHandCardPositions, resetScene } from './scene_functions'
-import { selectAnimation } from './animations'
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
 import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js'
@@ -85,6 +84,7 @@ export default function GameScreen() {
 
         socket.on('chat', channels.receiveChatMessage)
         socket.on('build_match', (match: channels.matchObject) => { channels.receiveAndDisplayMatchObject(match, scene, loader, textureLoader) })
+        socket.on('card_udate', channels.receiveCardUpdate)
 
 
 

@@ -66,12 +66,6 @@ async function verifyToken(req, res, next) {//currently unused
 
 
 
-let opponentsQueue = []
-
-let activeMatches = []
-
-
-
 expressServer.post('/login/validatefields/newaccount', async (req, res) => {
     try {
         let messages = []
@@ -175,6 +169,10 @@ expressServer.post('/login/validatefields', async (req, res) => {
 
 
 
+let opponentsQueue = []
+
+let activeMatches = []
+
 function generateCardUuid() {
     return `${activeMatches.length}-${Date.now() + Math.round(Math.random() * 1000000)}-${Math.round(Math.random() * 100)}`
 }
@@ -200,24 +198,40 @@ socketServer.on('connection', (client) => {
 
         if (opponentsQueue.length >= 2) {
             const playersIds = [opponentsQueue.shift(), opponentsQueue.shift()]
+            const matchId = `match-${Date.now()}-${Math.round(Math.random() * 100)}`
             const playersHandCards = [
-                { player: playersIds[0].id, card_id: 'giant_serpent', uuid: generateCardUuid() },
-                { player: playersIds[0].id, card_id: 'wendigo', uuid: generateCardUuid() },
-                { player: playersIds[0].id, card_id: 'shadow_demon', uuid: generateCardUuid() },
-                { player: playersIds[1].id, card_id: 'giant_serpent', uuid: generateCardUuid() },
-                { player: playersIds[1].id, card_id: 'wendigo', uuid: generateCardUuid() },
-                { player: playersIds[1].id, card_id: 'shadow_demon', uuid: generateCardUuid() },
+                { player: playersIds[0].id, card_id: 'giant_serpent', uuid: generateCardUuid(), mana_cost: 1 },
+                { player: playersIds[0].id, card_id: 'wendigo', uuid: generateCardUuid(), mana_cost: 1 },
+                { player: playersIds[0].id, card_id: 'shadow_demon', uuid: generateCardUuid(), mana_cost: 2 },
+                { player: playersIds[1].id, card_id: 'giant_serpent', uuid: generateCardUuid(), mana_cost: 1 },
+                { player: playersIds[1].id, card_id: 'wendigo', uuid: generateCardUuid(), mana_cost: 1 },
+                { player: playersIds[1].id, card_id: 'shadow_demon', uuid: generateCardUuid(), mana_cost: 2 },
             ]
 
             activeMatches.push(
                 {
-                    current_turn_player_id: playersIds[Math.round(Math.random())],
-                    players_hand_cards: playersHandCards,
-                    players_ids: playersIds,
-                    players_lifes: [10, 10],
-                    players_mana_levels: [1, 1],
-                    players_table_cards: null,
-                    match_id: `match-${Date.now()}-${Math.round(Math.random() * 100)}`,
+                    players: [
+                        {
+                            id: playersIds[0].id,
+                            socketId: playersIds[0].socketId,
+                            nickname: playersIds[0].nickname,
+                            life: 10,
+                            mana_level: 1,
+                            hand_cards: playersHandCards.filter(card => card.player == playersIds[0].id),
+                            table_cards: [],
+                        },
+                        {
+                            id: playersIds[1].id,
+                            socketId: playersIds[1].socketId,
+                            nickname: playersIds[1].nickname,
+                            life: 10,
+                            mana_level: 1,
+                            hand_cards: playersHandCards.filter(card => card.player == playersIds[1].id),
+                            table_cards: [],
+                        }
+                    ],
+                    current_turn_player: Math.round(Math.random()),
+                    match_id: matchId,
                     start_time: (new Date()).toISOString(),
                     total_turns_count: 0
                 }
@@ -252,6 +266,33 @@ socketServer.on('connection', (client) => {
     })
 
     client.on('move_request', (request) => {
+        const requestMatch = activeMatches.find(match => match.players.some(player => player.socketId == client.id))
+
+        try {
+            if (requestMatch) {
+                const player = requestMatch.players.find(player => player.socketId == client.id)
+                const card = player.hand_cards.find(card => card.uuid == request.card.uuid)
+
+                if (request.action == 'throw_onto_table') {
+                    if (player.mana_level >= card.mana_cost) {
+                        socketServer.to(player.socketId).emit('card_update', { uuid: card.uuid })
+
+                        player.table_cards.push(card)
+                        player.hand_cards.splice(player.hand_cards.indexOf(card), 1)
+                    }
+                    else {
+                        client.emit('chat', { sender: 'Server', color: '#ffee00', text: 'You dont have enough mana' })
+                    }
+                }
+            }
+            else {
+                client.emit('chat', { sender: 'Server', color: '#ffee00', text: 'You are not battling with anyone' })
+            }
+        }
+        catch (error) {
+            client.emit('chat', { sender: 'Server', color: '#ff5500', text: `unexpected error in the move request channel: ${error}` })
+            console.log(error)
+        }
     })
 
 

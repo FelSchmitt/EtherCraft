@@ -1,15 +1,15 @@
-import { Scene, TextureLoader, Group, Object3D, Object3DEventMap } from 'three'
+import { Scene, TextureLoader } from 'three'
 import { Socket } from 'socket.io-client'
 import { GLTFLoader } from 'three/examples/jsm/Addons.js'
 
 export type matchObject = {
     hand_cards: { card_id: string, uuid: string }[],
-    table_cards: { card_id: string }[] | null,
+    table_cards: { card_id: string, uuid: string }[],
     life: number,
     mana_level: number,
     opponent: {
         hand_cards: number,
-        table_cards: number | null,
+        table_cards: number,
         id: string,
         nickname: string,
         life: number,
@@ -21,6 +21,12 @@ type chatMessage = {
     sender: string,
     color: string,
     text: string
+}
+
+type cardStateUpdate = {
+    uuid: string | null,
+    place: 'table' | 'hand',
+    side: 'self' | 'opponent'
 }
 
 
@@ -109,4 +115,9 @@ export function receiveAndDisplayMatchObject(match: matchObject, scene: Scene, l
         table.children[1].children[1].material.map = selfPlayerIcon
         table.children[0].children[1].material.map = opponentPlayerIcon
     }
+}
+
+
+
+export function receiveCardUpdate(update: cardStateUpdate) {
 }
