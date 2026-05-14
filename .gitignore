@@ -4,6 +4,7 @@
 .env
 login.txt
 /backend/assets/users/*.png
+test.js
 
 # duplicated blender projects
 *.blend1

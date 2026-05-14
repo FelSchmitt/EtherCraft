@@ -1,6 +1,7 @@
-import { Scene, TextureLoader } from 'three'
+import { Object3D, Scene, TextureLoader } from 'three'
 import { Socket } from 'socket.io-client'
 import { GLTFLoader } from 'three/examples/jsm/Addons.js'
+import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js'
 
 export type matchObject = {
     hand_cards: { card_id: string, uuid: string }[],
@@ -23,8 +24,8 @@ type chatMessage = {
     text: string
 }
 
-type cardStateUpdate = {
-    uuid: string | null,
+export type cardStateUpdate = {
+    uuid: string | undefined,
     place: 'table' | 'hand',
     side: 'self' | 'opponent'
 }
@@ -53,6 +54,12 @@ export function receiveChatMessage(message: chatMessage) {
 
 
 
+export function receiveMatchDataToDisplayInConsole(message: any) {
+    console.log(message)
+}
+
+
+
 export function receiveAndDisplayMatchObject(match: matchObject, scene: Scene, loader: GLTFLoader, textureLoader: TextureLoader) {
     match.hand_cards.forEach((card, index) => {
         loader.load(
@@ -65,15 +72,16 @@ export function receiveAndDisplayMatchObject(match: matchObject, scene: Scene, l
                 cardModel.position.x = -14
                 cardModel.position.y = 14
                 cardModel.position.z = Math.floor(match.hand_cards.length / 2) * -3 + index * 3
-                cardModel.rotateX(3.14)
                 cardModel.rotateY(3.14)
-                cardModel.rotateZ(-1.1)
+                cardModel.rotateX(3.14)
+                cardModel.rotateZ(-0.7)
                 cardModel.userData.name = card.card_id
                 cardModel.userData.place = 'hand'
                 cardModel.userData.uuid = card.uuid
-                cardModel.userData.owner = localStorage.getItem('id')
+                cardModel.userData.side = 'self'
 
                 scene.add(cardModel)
+                console.log(cardModel)
             },
             function (progress) { },
             function (error) {
@@ -91,8 +99,10 @@ export function receiveAndDisplayMatchObject(match: matchObject, scene: Scene, l
 
                 cardModel.position.x = 14
                 cardModel.position.y = 14
-                cardModel.position.z = Math.floor(match.opponent.hand_cards / 2) * -4 + i * 4
-                cardModel.rotateZ(1.1)
+                cardModel.position.z = Math.floor(match.opponent.hand_cards / 2) * -3 + i * 3
+                cardModel.rotateZ(0.7)
+                cardModel.userData.place = 'hand'
+                cardModel.userData.side = 'opponent'
 
                 scene.add(cardModel)
             },
@@ -119,5 +129,29 @@ export function receiveAndDisplayMatchObject(match: matchObject, scene: Scene, l
 
 
 
-export function receiveCardUpdate(update: cardStateUpdate) {
+export function receiveCardUpdate(update: cardStateUpdate, scene: Scene, outline: OutlinePass) {
+    if (update.side === 'self' && update.uuid) {
+        const card = scene.children.find(object => object.userData.uuid === update.uuid)
+
+        if (card) {
+            if (update.place === 'table') {
+                card.userData.place = 'table'
+
+                const cardsOnTable = scene.children.filter(object => object.userData.side === 'self' && object.userData.place === 'table')
+
+                cardsOnTable.forEach((card, index) => {
+                    card.position.x = -7
+                    card.position.y = 10
+                    card.position.z = Math.floor(cardsOnTable.length / 2) * -3 + index * 3
+
+                    card.rotation.z = -1.57
+                    card.rotation.y = 3.14
+                })
+            }
+        }
+    }
+
+    if (update.side === 'self') {
+        outline.selectedObjects = []
+    }
 }

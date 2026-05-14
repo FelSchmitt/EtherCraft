@@ -29,7 +29,7 @@ export default function GameScreen() {
         const raycaster = new three.Raycaster()
         const loader = new GLTFLoader()
         const textureLoader = new three.TextureLoader()
-        const light = new three.DirectionalLight('#ffffff', 3)
+        const light = new three.DirectionalLight('#ffffff', 5)
         const composer = new EffectComposer(renderer)
         const renderPass = new RenderPass(scene, camera)
         const outlinePass = new OutlinePass(new three.Vector2(window.innerWidth, window.innerHeight), scene, camera)
@@ -37,7 +37,7 @@ export default function GameScreen() {
         composer.addPass(renderPass)
         outlinePass.edgeStrength = 5.0
         outlinePass.edgeGlow = 0.7
-        outlinePass.edgeThickness = 4.0
+        outlinePass.edgeThickness = 5.0
         outlinePass.visibleEdgeColor.set('#2fc4ff')
         outlinePass.hiddenEdgeColor.set('#15556e')
         composer.addPass(outlinePass)
@@ -84,7 +84,8 @@ export default function GameScreen() {
 
         socket.on('chat', channels.receiveChatMessage)
         socket.on('build_match', (match: channels.matchObject) => { channels.receiveAndDisplayMatchObject(match, scene, loader, textureLoader) })
-        socket.on('card_udate', channels.receiveCardUpdate)
+        socket.on('card_update', (update: channels.cardStateUpdate) => { channels.receiveCardUpdate(update, scene, outlinePass) })
+        socket.on('match-data', channels.receiveMatchDataToDisplayInConsole)
 
 
 
@@ -130,12 +131,14 @@ export default function GameScreen() {
                 const group = list[0].object.parent
 
                 if (group) {
-                    if (group.userData.owner = localStorage.getItem('id')) {
+                    if (group.userData.side === 'self') {
                         selectedCard = group
                         outlinePass.selectedObjects = [group]
                     }
-                    else if (group.name == 'table' && selectedCard) {
-                        socket.emit('move_request', {card: selectedCard.userData, action: 'throw_onto_table'})
+                    else if (group.name === 'table' && selectedCard) {
+                        socket.emit('move_request', { card: selectedCard.userData, action: 'throw_onto_table' })
+                        selectedCard = null
+                        outlinePass.selectedObjects = []
                     }
                 }
             }
@@ -185,6 +188,11 @@ export default function GameScreen() {
                 <div onClick={() => { socket.emit('delete_all_matches', 'message') }} className='tools-menu-option'>
                     <img src='/icons/delete.png' className='tools-menu-image' />
                     <span className='tools-menu-label'>Delete All Matches</span>
+                </div>
+
+                <div onClick={() => { socket.emit('get_match', 'message') }} className='tools-menu-option'>
+                    <img src='/icons/console.png' className='tools-menu-image' />
+                    <span className='tools-menu-label'>Get Match Data</span>
                 </div>
 
                 <div id='reset-scene' className='tools-menu-option'>

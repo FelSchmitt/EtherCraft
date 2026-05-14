@@ -23,7 +23,7 @@ export function resetScene(scene: Scene, loader: GLTFLoader, light: Light) {
     scene.add(light)
 }
 
-export function setHandCardPositions(scene: Scene, side: 'opponent' | 'self') {
+export function setHandCardPositions(scene: Scene) {
     const cardObjects = scene.children.filter(object => object.name == 'card')
 
     cardObjects.forEach((card, index) => {

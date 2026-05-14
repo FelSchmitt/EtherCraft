@@ -173,6 +173,31 @@ let opponentsQueue = []
 
 let activeMatches = []
 
+let moveRulesList = {
+    throw_onto_table: [
+        { function: (match, player, request) => match.players[match.current_turn_player] === player, failMessage: "It's your opponent's turn" },
+        { function: (match, player, request) => player.hand_cards.find(card => card.uuid === request.card.uuid), failMessage: "Card not found in your hand" },
+        { function: (match, player, request) => player.mana_level >= player.hand_cards.find(card => card.uuid === request.card.uuid).mana_cost, failMessage: "You don't have enough mana" },
+        {
+            function: (match, player, request) => {
+                const card = player.hand_cards.find(card => card.uuid === request.card.uuid)
+
+                match.players.forEach((playerToSendUpdate, index) => {
+                    socketServer.to(playerToSendUpdate.socketId).emit(
+                        'card_update',
+                        playerToSendUpdate === player ? { uuid: card.uuid, place: 'table', side: 'self' } : { place: 'table', side: 'opponent' }
+                    )
+                })
+                player.table_cards.push(card)
+                player.hand_cards.splice(player.hand_cards.indexOf(card), 1)
+
+                return true
+            },
+            failMessage: "Could not update the match"
+        },
+    ],
+}
+
 function generateCardUuid() {
     return `${activeMatches.length}-${Date.now() + Math.round(Math.random() * 1000000)}-${Math.round(Math.random() * 100)}`
 }
@@ -217,7 +242,7 @@ socketServer.on('connection', (client) => {
                             nickname: playersIds[0].nickname,
                             life: 10,
                             mana_level: 1,
-                            hand_cards: playersHandCards.filter(card => card.player == playersIds[0].id),
+                            hand_cards: playersHandCards.filter(card => card.player === playersIds[0].id),
                             table_cards: [],
                         },
                         {
@@ -226,7 +251,7 @@ socketServer.on('connection', (client) => {
                             nickname: playersIds[1].nickname,
                             life: 10,
                             mana_level: 1,
-                            hand_cards: playersHandCards.filter(card => card.player == playersIds[1].id),
+                            hand_cards: playersHandCards.filter(card => card.player === playersIds[1].id),
                             table_cards: [],
                         }
                     ],
@@ -242,15 +267,15 @@ socketServer.on('connection', (client) => {
             playersIds.forEach((player, index) => {
                 socketServer.to(player.socketId).emit('build_match',
                     {
-                        hand_cards: playersHandCards.filter(card => card.player == player.id),
+                        hand_cards: playersHandCards.filter(card => card.player === player.id),
                         table_cards: null,
                         life: 10,
                         mana_level: 1,
                         opponent: {
                             hand_cards: 3,
                             table_cards: null,
-                            id: playersIds[index == 0 ? 1 : 0].id,
-                            nickname: playersIds[index == 0 ? 1 : 0].nickname,
+                            id: playersIds[index === 0 ? 1 : 0].id,
+                            nickname: playersIds[index === 0 ? 1 : 0].nickname,
                             life: 10,
                             mana_level: 1
                         }
@@ -259,34 +284,29 @@ socketServer.on('connection', (client) => {
 
                 socketServer.to(playersIds[index].socketId).emit(
                     'chat',
-                    { sender: 'Server', color: '#ffee00', text: `You joined the match ${matchId} with ${playersIds[index == 0 ? 1 : 0].nickname}` }
+                    { sender: 'Server', color: '#ffee00', text: `You joined the match ${matchId} with ${playersIds[index === 0 ? 1 : 0].nickname}` }
                 )
             })
         }
     })
 
     client.on('move_request', (request) => {
-        const requestMatch = activeMatches.find(match => match.players.some(player => player.socketId == client.id))
-
         try {
-            if (requestMatch) {
-                const player = requestMatch.players.find(player => player.socketId == client.id)
-                const card = player.hand_cards.find(card => card.uuid == request.card.uuid)
+            const correspondingMatch = activeMatches.find(match => match.players.some(player => player.socketId === client.id))
+            const player = correspondingMatch.players.find(player => player.socketId === client.id)
 
-                if (request.action == 'throw_onto_table') {
-                    if (player.mana_level >= card.mana_cost) {
-                        socketServer.to(player.socketId).emit('card_update', { uuid: card.uuid })
-
-                        player.table_cards.push(card)
-                        player.hand_cards.splice(player.hand_cards.indexOf(card), 1)
+            if (correspondingMatch && player) {
+                for (const rule of moveRulesList[request.action]) {
+                    if (rule.function(correspondingMatch, player, request)) {
                     }
                     else {
-                        client.emit('chat', { sender: 'Server', color: '#ffee00', text: 'You dont have enough mana' })
+                        client.emit('chat', { sender: 'Server', color: '#ffee00', text: rule.failMessage })
+                        break
                     }
                 }
             }
             else {
-                client.emit('chat', { sender: 'Server', color: '#ffee00', text: 'You are not battling with anyone' })
+                client.emit('chat', { sender: 'Server', color: '#ffaa00', text: 'Movement denied' })
             }
         }
         catch (error) {
@@ -312,6 +332,10 @@ socketServer.on('connection', (client) => {
         })
 
         activeMatches.splice(0)
+    })
+
+    client.on('get_match', (message) => {
+        client.emit('match-data', activeMatches.find(match => match.players.some(player => player.socketId === client.id)))
     })
 })
 
