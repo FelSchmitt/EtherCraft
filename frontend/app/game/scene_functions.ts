@@ -1,5 +1,7 @@
-import { Scene, Light } from 'three'
+import { Scene, Light, Object3D } from 'three'
 import { GLTFLoader } from 'three/examples/jsm/Addons.js'
+
+
 
 export function resetScene(scene: Scene, loader: GLTFLoader, light: Light) {
     scene.children.splice(0)
@@ -20,15 +22,24 @@ export function resetScene(scene: Scene, loader: GLTFLoader, light: Light) {
         }
     )
 
+    loader.load(
+        'models/carpet.glb',
+        function (gltf) {
+            gltf.scene.name = 'carpet'
+            scene.add(gltf.scene)
+            console.log('carpet model loaded')
+        },
+        function (progress) { },
+        function (error) {
+            console.error(error)
+            alert(`carpet model failed: ${error}`)
+        }
+    )
+
     scene.add(light)
 }
 
-export function setHandCardPositions(scene: Scene) {
-    const cardObjects = scene.children.filter(object => object.name == 'card')
 
-    cardObjects.forEach((card, index) => {
-        card.position.x = 14
-        card.position.y = 16
-        card.position.z = Math.floor(cardObjects.length / 2) * -3 + index * 3
-    })
+
+export function updateObjectVectorValue(object: Object3D, inputElement: HTMLInputElement) {
 }

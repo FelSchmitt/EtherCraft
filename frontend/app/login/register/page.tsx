@@ -30,18 +30,18 @@ export default function RegisterPage() {
 
     const texts: string[][] = [
       [
-        'Este id de usuário já existe. Escolha outro.',
-        'Este id de usuário é muito curto. Deve ser de 5 a 20 caracteres.',
-        'Este id de usuário é muito longo. Deve ser de 5 a 20 caracteres.'
+        'This user ID already exists. Choose another',
+        'This user ID is too short. Must be 5 to 20 characters',
+        'This user ID is too long. Must be 5 to 20 characters'
       ],
       [
-        'Esta senha é muito curta. Deve ser de 10 a 45 caracteres.',
-        'Esta senha é muito longa. Deve ser de 10 a 45 caracteres.'
+        'This password is too short. Must be 10 to 45 characters',
+        'This password is too long. Must be 10 to 45 characters'
       ],
       [
-        'Este nome de jogador já existe. Escolha outro.',
-        'Este nome de jogador é muito curto. Deve ser de 5 a 30 caracteres.',
-        'Este nome de jogador é muito longo. Deve ser de 5 a 30 caracteres.'
+        'This player name alreadt exists. Choose another',
+        'This player name is too short. Must be 5 to 30 characters',
+        'This player name is too long. Must be 5 to 30 characters'
       ]
     ]
 

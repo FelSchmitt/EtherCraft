@@ -4,18 +4,18 @@ import { useEffect } from 'react'
 import * as three from 'three'
 import { OrbitControls } from 'three/examples/jsm/Addons.js'
 import { GLTFLoader } from 'three/examples/jsm/Addons.js'
-import { io } from 'socket.io-client'
 import * as channels from './socket_channels'
-import { setHandCardPositions, resetScene } from './scene_functions'
+import * as sceneFunctions from './scene_functions'
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
 import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js'
 
+import { ServerControlTools } from './menu_tools/ServerControlTools'
+import { ObjectVectorsMenu } from './menu_tools/ObjectVectorsMenu'
+
 
 
 export default function GameScreen() {
-    const socket = io('http://localhost:3001')
-
     useEffect(() => {
         const gameScreen = document.getElementById('gamescreen') as HTMLCanvasElement
         const renderer = new three.WebGLRenderer({ canvas: gameScreen })
@@ -29,22 +29,23 @@ export default function GameScreen() {
         const raycaster = new three.Raycaster()
         const loader = new GLTFLoader()
         const textureLoader = new three.TextureLoader()
-        const light = new three.DirectionalLight('#ffffff', 5)
+        const light = new three.AmbientLight('#ffffff', 4)
         const composer = new EffectComposer(renderer)
         const renderPass = new RenderPass(scene, camera)
         const outlinePass = new OutlinePass(new three.Vector2(window.innerWidth, window.innerHeight), scene, camera)
 
         composer.addPass(renderPass)
         outlinePass.edgeStrength = 5.0
-        outlinePass.edgeGlow = 0.7
-        outlinePass.edgeThickness = 5.0
+        outlinePass.edgeGlow = 0.6
+        outlinePass.edgeThickness = 3.0
         outlinePass.visibleEdgeColor.set('#2fc4ff')
         outlinePass.hiddenEdgeColor.set('#15556e')
         composer.addPass(outlinePass)
 
         let loop: boolean = true
-        let mousePosition: three.Vector2 = new three.Vector2()
-        let selectedCard: three.Object3D | null = null
+        const mousePosition: three.Vector2 = new three.Vector2()
+        let selectedObject: three.Object3D | null = null
+        const inputs: NodeListOf<HTMLInputElement> = document.querySelectorAll('.vectorinput')
 
         loader.load(
             'models/game_table.glb',
@@ -76,16 +77,15 @@ export default function GameScreen() {
 
         camera.position.setX(-12)
         camera.position.setY(28)
-        light.position.setY(20)
         scene.add(light)
         renderer.render(scene, camera)
 
 
 
-        socket.on('chat', channels.receiveChatMessage)
-        socket.on('build_match', (match: channels.matchObject) => { channels.receiveAndDisplayMatchObject(match, scene, loader, textureLoader) })
-        socket.on('card_update', (update: channels.cardStateUpdate) => { channels.receiveCardUpdate(update, scene, outlinePass) })
-        socket.on('match-data', channels.receiveMatchDataToDisplayInConsole)
+        channels.socketConnection.on('chat', channels.receiveChatMessage)
+        channels.socketConnection.on('build_match', (match: channels.matchObject) => { channels.receiveAndDisplayMatchObject(match, scene, loader, textureLoader) })
+        channels.socketConnection.on('card_update', (update: channels.cardStateUpdate) => { channels.receiveCardUpdate(update, scene, outlinePass, textureLoader) })
+        channels.socketConnection.on('match_data', channels.receiveMatchDataToDisplayInConsole)
 
 
 
@@ -131,26 +131,41 @@ export default function GameScreen() {
                 const group = list[0].object.parent
 
                 if (group) {
-                    if (group.userData.side === 'self') {
-                        selectedCard = group
-                        outlinePass.selectedObjects = [group]
+                    if (selectedObject) {
+                        if (group.name === 'table' && selectedObject.name === 'card' && selectedObject.userData.side === 'self') {
+                            channels.socketConnection.emit('move_request', { card: selectedObject.userData, action: 'throw_onto_table' })
+                            selectedObject = null
+                            outlinePass.selectedObjects = []
+                        }
                     }
-                    else if (group.name === 'table' && selectedCard) {
-                        socket.emit('move_request', { card: selectedCard.userData, action: 'throw_onto_table' })
-                        selectedCard = null
-                        outlinePass.selectedObjects = []
+                    else {
+                        selectedObject = group
+                        outlinePass.selectedObjects = [group]
                     }
                 }
             }
+            else {
+                selectedObject = null
+                outlinePass.selectedObjects = []
+            }
+        }
+
+        function detectVectorInputChange(this: HTMLInputElement) {
+            selectedObject && sceneFunctions.updateObjectVectorValue(selectedObject, this)
         }
 
         window.addEventListener('keydown', pauseAndResumeAnimation)
         gameScreen.addEventListener('click', sceneMouseInteraction)
-        document.getElementById('reset-scene')?.addEventListener('click', () => { resetScene(scene, loader, light) })
+        document.getElementById('reset-scene')?.addEventListener('click', () => { sceneFunctions.resetScene(scene, loader, light) })
+
+        for (const input of inputs) {
+            input.addEventListener('change', detectVectorInputChange)
+        }
+
         gameLoop()
 
         return () => {
-            socket.off('connection')
+            channels.socketConnection.off('connection')
             window.removeEventListener('keydown', pauseAndResumeAnimation)
             gameScreen.removeEventListener('click', sceneMouseInteraction)
         }
@@ -166,44 +181,11 @@ export default function GameScreen() {
                 <div id='test-chat' className='w-[90%] h-[80%] bg-[#888] flex flex-col overflow-y-scroll'></div>
 
                 <input type='text' id='message-input' className='bg-white border-[3px] border-[#4784ff] w-[90%]' />
-                <button onClick={() => { channels.sendChatMessage(socket) }} className='bg-[#9d47ff60] border-[3px] border-[#9d47ff] rounded-[5px] w-[90%] p-0.75 text-white font-bold'>SEND</button>
+                <button onClick={() => { channels.sendChatMessage(channels.socketConnection) }} className='bg-[#9d47ff60] border-[3px] border-[#9d47ff] rounded-[5px] w-[90%] p-0.75 text-white font-bold'>SEND</button>
             </div>
 
-            <div id='test-tools' className='absolute w-[50vw] h-[10vh] border-2 rounded-2xl border-zinc-500 bg-[#8888] flex justify-evenly items-center'>
-                <div onClick={() => { (document.getElementById('test-chat') as HTMLDivElement).innerHTML = '' }} className='tools-menu-option'>
-                    <img src='/icons/clear.png' className='tools-menu-image' />
-                    <span className='tools-menu-label'>Clear Chat</span>
-                </div>
-
-                <div onClick={() => { localStorage.getItem('id') && socket.emit('find_opponent', { id: localStorage.getItem('id'), nickname: localStorage.getItem('nickname') }) }} className='tools-menu-option'>
-                    <img src='/icons/join.png' className='tools-menu-image' />
-                    <span className='tools-menu-label'>Join Waiting Queue</span>
-                </div>
-
-                <div onClick={() => { socket.emit('clear_waiting_queue', 'message') }} className='tools-menu-option'>
-                    <img src='/icons/clear.png' className='tools-menu-image' />
-                    <span className='tools-menu-label'>Clear Waiting Queue</span>
-                </div>
-
-                <div onClick={() => { socket.emit('delete_all_matches', 'message') }} className='tools-menu-option'>
-                    <img src='/icons/delete.png' className='tools-menu-image' />
-                    <span className='tools-menu-label'>Delete All Matches</span>
-                </div>
-
-                <div onClick={() => { socket.emit('get_match', 'message') }} className='tools-menu-option'>
-                    <img src='/icons/console.png' className='tools-menu-image' />
-                    <span className='tools-menu-label'>Get Match Data</span>
-                </div>
-
-                <div id='reset-scene' className='tools-menu-option'>
-                    <img src='/icons/reset.png' className='tools-menu-image' />
-                    <span className='tools-menu-label'>Reset Scene</span>
-                </div>
-
-                <span id='loop-label' className='font-bold bg-white p-2 rounded-2xl'>Game Scene Running</span>
-
-                <button onClick={() => { (document.getElementById('test-tools') as HTMLDivElement).classList.toggle('closed') }} className='font-bold bg-white p-2 rounded-2xl text-black absolute top-[85%]'>⬇</button>
-            </div>
+            <ServerControlTools />
+            <ObjectVectorsMenu />
         </>
     )
 }

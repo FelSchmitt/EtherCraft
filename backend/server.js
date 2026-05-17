@@ -173,6 +173,8 @@ let opponentsQueue = []
 
 let activeMatches = []
 
+
+
 let moveRulesList = {
     throw_onto_table: [
         { function: (match, player, request) => match.players[match.current_turn_player] === player, failMessage: "It's your opponent's turn" },
@@ -196,7 +198,32 @@ let moveRulesList = {
             failMessage: "Could not update the match"
         },
     ],
+
+    attack_enemy_card: [
+        { function: (match, player, request) => match.players[match.current_turn_player] === player, failMessage: "It's your opponent's turn" },
+        { function: (match, player, request) => player.hand_cards.find(card => card.uuid === request.card.uuid), failMessage: "Card not found in your hand" },
+        { function: (match, player, request) => player.hand_cards.find(card => card.uuid === request.card.uuid).can_attack, failMessage: "This card must wait a turn to attack" },
+        {
+            function: (match, player, request) => {
+                const card = player.hand_cards.find(card => card.uuid === request.card.uuid)
+
+                match.players.forEach((playerToSendUpdate, index) => {
+                    socketServer.to(playerToSendUpdate.socketId).emit(
+                        'card_update',
+                        playerToSendUpdate === player ? { uuid: card.uuid, place: 'table', side: 'self' } : { place: 'table', side: 'opponent' }
+                    )
+                })
+                player.table_cards.push(card)
+                player.hand_cards.splice(player.hand_cards.indexOf(card), 1)
+
+                return true
+            },
+            failMessage: "Could not update the match"
+        },
+    ],
 }
+
+
 
 function generateCardUuid() {
     return `${activeMatches.length}-${Date.now() + Math.round(Math.random() * 1000000)}-${Math.round(Math.random() * 100)}`
@@ -225,12 +252,12 @@ socketServer.on('connection', (client) => {
             const playersIds = [opponentsQueue.shift(), opponentsQueue.shift()]
             const matchId = `match-${Date.now()}-${Math.round(Math.random() * 100)}`
             const playersHandCards = [
-                { player: playersIds[0].id, card_id: 'giant_serpent', uuid: generateCardUuid(), mana_cost: 1 },
-                { player: playersIds[0].id, card_id: 'wendigo', uuid: generateCardUuid(), mana_cost: 1 },
-                { player: playersIds[0].id, card_id: 'shadow_demon', uuid: generateCardUuid(), mana_cost: 2 },
-                { player: playersIds[1].id, card_id: 'giant_serpent', uuid: generateCardUuid(), mana_cost: 1 },
-                { player: playersIds[1].id, card_id: 'wendigo', uuid: generateCardUuid(), mana_cost: 1 },
-                { player: playersIds[1].id, card_id: 'shadow_demon', uuid: generateCardUuid(), mana_cost: 2 },
+                { player: playersIds[0].id, card_id: 'giant_serpent', uuid: generateCardUuid(), mana_cost: 1, life: 5, attack_damage: 3, can_attack: false },
+                { player: playersIds[0].id, card_id: 'wendigo', uuid: generateCardUuid(), mana_cost: 1, life: 4, attack_damage: 2, can_attack: false },
+                { player: playersIds[0].id, card_id: 'shadow_demon', uuid: generateCardUuid(), mana_cost: 2, life: 5, attack_damage: 3, can_attack: false },
+                { player: playersIds[1].id, card_id: 'giant_serpent', uuid: generateCardUuid(), mana_cost: 1, life: 5, attack_damage: 3, can_attack: false },
+                { player: playersIds[1].id, card_id: 'wendigo', uuid: generateCardUuid(), mana_cost: 1, life: 4, attack_damage: 2, can_attack: false },
+                { player: playersIds[1].id, card_id: 'shadow_demon', uuid: generateCardUuid(), mana_cost: 2, life: 5, attack_damage: 3, can_attack: false },
             ]
 
             activeMatches.push(
@@ -335,7 +362,7 @@ socketServer.on('connection', (client) => {
     })
 
     client.on('get_match', (message) => {
-        client.emit('match-data', activeMatches.find(match => match.players.some(player => player.socketId === client.id)))
+        client.emit('match_data', activeMatches.find(match => match.players.some(player => player.socketId === client.id)))
     })
 })
 

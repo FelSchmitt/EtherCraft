@@ -1,5 +1,5 @@
 import { Object3D, Scene, TextureLoader } from 'three'
-import { Socket } from 'socket.io-client'
+import { Socket, io } from 'socket.io-client'
 import { GLTFLoader } from 'three/examples/jsm/Addons.js'
 import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js'
 
@@ -26,12 +26,17 @@ type chatMessage = {
 
 export type cardStateUpdate = {
     uuid: string | undefined,
+    id: string | undefined,
     place: 'table' | 'hand',
     side: 'self' | 'opponent'
 }
 
 
 
+
+
+
+export const socketConnection = io('http://localhost:3001')
 
 
 
@@ -68,7 +73,8 @@ export function receiveAndDisplayMatchObject(match: matchObject, scene: Scene, l
                 const cardModel: any = gltf.scene.children[0]
                 const cardTexture = textureLoader.load(`http://localhost:3001/cards/${card.card_id}.png`)
 
-                cardModel.children[2].material.map = cardTexture
+                cardModel.name = 'card'
+                // cardModel.children[2].material.map = cardTexture
                 cardModel.position.x = -14
                 cardModel.position.y = 14
                 cardModel.position.z = Math.floor(match.hand_cards.length / 2) * -3 + index * 3
@@ -79,7 +85,7 @@ export function receiveAndDisplayMatchObject(match: matchObject, scene: Scene, l
                 cardModel.userData.place = 'hand'
                 cardModel.userData.uuid = card.uuid
                 cardModel.userData.side = 'self'
-
+                
                 scene.add(cardModel)
                 console.log(cardModel)
             },
@@ -90,13 +96,14 @@ export function receiveAndDisplayMatchObject(match: matchObject, scene: Scene, l
             }
         )
     })
-
+    
     for (let i = 0; i < match.opponent.hand_cards; i++) {
         loader.load(
             'models/card.glb',
             function (gltf) {
                 const cardModel = gltf.scene.children[0]
-
+                
+                cardModel.name = 'card'
                 cardModel.position.x = 14
                 cardModel.position.y = 14
                 cardModel.position.z = Math.floor(match.opponent.hand_cards / 2) * -3 + i * 3
@@ -129,7 +136,7 @@ export function receiveAndDisplayMatchObject(match: matchObject, scene: Scene, l
 
 
 
-export function receiveCardUpdate(update: cardStateUpdate, scene: Scene, outline: OutlinePass) {
+export function receiveCardUpdate(update: cardStateUpdate, scene: Scene, outline: OutlinePass, textureLoader: TextureLoader) {
     if (update.side === 'self' && update.uuid) {
         const card = scene.children.find(object => object.userData.uuid === update.uuid)
 
@@ -141,13 +148,32 @@ export function receiveCardUpdate(update: cardStateUpdate, scene: Scene, outline
 
                 cardsOnTable.forEach((card, index) => {
                     card.position.x = -7
-                    card.position.y = 10
+                    card.position.y = 11
                     card.position.z = Math.floor(cardsOnTable.length / 2) * -3 + index * 3
 
                     card.rotation.z = -1.57
                     card.rotation.y = 3.14
                 })
             }
+        }
+    }
+
+    else if (update.side === 'opponent') {
+        if (update.place === 'table' && update.id) {
+            const opponentHandCards = scene.children.filter(object => object.userData.side === 'opponent' && object.userData.place === 'hand')
+            const randomlyChosenCard = opponentHandCards[Math.ceil(Math.random() * opponentHandCards.length)]
+            // const cardTexture = textureLoader.load(`http://localhost:3001/cards/${update.id}.png`)
+
+            randomlyChosenCard.userData.place = 'table'
+            randomlyChosenCard.position.x = 7
+            randomlyChosenCard.position.y = 11
+            randomlyChosenCard.rotation.z = -1.57
+
+            const opponentTableCards = scene.children.filter(object => object.userData.side === 'opponent' && object.userData.place === 'table')
+
+            opponentTableCards.forEach((card, index) => {
+                card.position.z = Math.floor(opponentTableCards.length / 2) * -3 + index * 3
+            })
         }
     }
 
