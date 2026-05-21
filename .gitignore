@@ -5,6 +5,7 @@
 login.txt
 /backend/assets/users/*.png
 test.js
+backup.sql
 
 # duplicated blender projects
 *.blend1

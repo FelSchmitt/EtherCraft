@@ -154,6 +154,10 @@ export default function GameScreen() {
             selectedObject && sceneFunctions.updateObjectVectorValue(selectedObject, this)
         }
 
+        function getObject() {
+            selectedObject && sceneFunctions.getObjectVectorsValues(selectedObject, inputs)
+        }
+
         window.addEventListener('keydown', pauseAndResumeAnimation)
         gameScreen.addEventListener('click', sceneMouseInteraction)
         document.getElementById('reset-scene')?.addEventListener('click', () => { sceneFunctions.resetScene(scene, loader, light) })
@@ -168,6 +172,7 @@ export default function GameScreen() {
             channels.socketConnection.off('connection')
             window.removeEventListener('keydown', pauseAndResumeAnimation)
             gameScreen.removeEventListener('click', sceneMouseInteraction)
+            for (const input of inputs) { input.removeEventListener('change', detectVectorInputChange) }
         }
     }, [])
 

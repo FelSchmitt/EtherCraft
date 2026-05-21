@@ -41,5 +41,35 @@ export function resetScene(scene: Scene, loader: GLTFLoader, light: Light) {
 
 
 
-export function updateObjectVectorValue(object: Object3D, inputElement: HTMLInputElement) {
+export function updateObjectVectorValue(object: any, input: HTMLInputElement) {
+    object[input.dataset.vector as string][input.dataset.value as string] = input.valueAsNumber
+}
+
+
+
+export function getObjectVectorsValues(object: Object3D, inputs: NodeListOf<HTMLInputElement>) {
+    for (const input of inputs) {
+        if (input.dataset.vector === 'position') {
+            if (input.dataset.value === 'x') {
+                input.value = String(object.position.x)
+            }
+            else if (input.dataset.value === 'y') {
+                input.value = String(object.position.y)
+            }
+            else if (input.dataset.value === 'z') {
+                input.value = String(object.position.z)
+            }
+        }
+        else if (input.dataset.vector === 'rotation') {
+            if (input.dataset.value === 'x') {
+                input.value = String(object.rotation.x)
+            }
+            else if (input.dataset.value === 'y') {
+                input.value = String(object.rotation.y)
+            }
+            else if (input.dataset.value === 'z') {
+                input.value = String(object.rotation.z)
+            }
+        }
+    }
 }

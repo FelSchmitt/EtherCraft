@@ -5,6 +5,7 @@ const cors = require('cors')
 var cookieParser = require('cookie-parser')
 const jwt = require('jsonwebtoken')
 const { Server } = require('socket.io')
+import { createClient } from 'redis'
 require('dotenv').config()
 
 
@@ -175,7 +176,7 @@ let activeMatches = []
 
 
 
-let moveRulesList = {
+const moveRulesList = {
     throw_onto_table: [
         { function: (match, player, request) => match.players[match.current_turn_player] === player, failMessage: "It's your opponent's turn" },
         { function: (match, player, request) => player.hand_cards.find(card => card.uuid === request.card.uuid), failMessage: "Card not found in your hand" },
@@ -203,24 +204,29 @@ let moveRulesList = {
         { function: (match, player, request) => match.players[match.current_turn_player] === player, failMessage: "It's your opponent's turn" },
         { function: (match, player, request) => player.hand_cards.find(card => card.uuid === request.card.uuid), failMessage: "Card not found in your hand" },
         { function: (match, player, request) => player.hand_cards.find(card => card.uuid === request.card.uuid).can_attack, failMessage: "This card must wait a turn to attack" },
-        {
-            function: (match, player, request) => {
-                const card = player.hand_cards.find(card => card.uuid === request.card.uuid)
-
-                match.players.forEach((playerToSendUpdate, index) => {
-                    socketServer.to(playerToSendUpdate.socketId).emit(
-                        'card_update',
-                        playerToSendUpdate === player ? { uuid: card.uuid, place: 'table', side: 'self' } : { place: 'table', side: 'opponent' }
-                    )
-                })
-                player.table_cards.push(card)
-                player.hand_cards.splice(player.hand_cards.indexOf(card), 1)
-
-                return true
-            },
-            failMessage: "Could not update the match"
-        },
     ],
+}
+
+
+
+const matchUpdatefunctions = {
+    throw_onto_table: {
+        function: (match, player, request) => {
+            const card = player.hand_cards.find(card => card.uuid === request.card.uuid)
+
+            match.players.forEach((playerToSendUpdate, index) => {
+                socketServer.to(playerToSendUpdate.socketId).emit(
+                    'card_update',
+                    playerToSendUpdate === player ? { uuid: card.uuid, place: 'table', side: 'self' } : { place: 'table', side: 'opponent' }
+                )
+            })
+            player.table_cards.push(card)
+            player.hand_cards.splice(player.hand_cards.indexOf(card), 1)
+
+            return true
+        },
+        failMessage: "Could not update the match"
+    },
 }
 
 

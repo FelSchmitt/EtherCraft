@@ -1,10 +1,10 @@
-<h1 align="center" style="font-size: 50px; font-weight: bold; color: gold" >EtherCraft</h1>
+<h1 align="center" style="font-size: 50px; font-weight: bold; color: #dfbb45" >EtherCraft</h1>
 <br />
 <br />
 
 <h2 align="center">A Full Stack Project</h2>
 
-<p align="center">Ethercraft is a complete fantasy game about duels with an opponent in a board with cards (and a tavern background scenery), in a very RPG style, that was heavily inspired by the original game <a style="color: aqua; font-weight: bold" href="https://hearthstone.blizzard.com/en-us">HEARTHSTONE</a> by Blizzard Entertainment.</p>
+<p align="center">Ethercraft is a complete fantasy game about duels with an opponent in a board with cards (and a tavern background scenery), in a very RPG style, that was heavily inspired by the original game <a style="color: #00d5ff; font-weight: bold" href="https://hearthstone.blizzard.com/en-us">HEARTHSTONE</a> by Blizzard Entertainment.</p>
 <br />
 
 <h2>Main Features</h2>
