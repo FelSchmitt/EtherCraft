@@ -34,8 +34,6 @@ export function ServerControlTools() {
             </div>
 
             <span id='loop-label' className='font-bold bg-white p-2 rounded-2xl'>Game Scene Running</span>
-
-            <button onClick={() => { (document.getElementById('test-tools') as HTMLDivElement).classList.toggle('closed') }} className='font-bold bg-white p-2 rounded-2xl text-black absolute top-[85%]'>⬇</button>
         </div>
     )
 }

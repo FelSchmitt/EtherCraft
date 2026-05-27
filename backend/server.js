@@ -18,6 +18,7 @@ const corsConfig = {
 const expressServer = express()
 const server = http.createServer(expressServer)
 const socketServer = new Server(server, { cors: corsConfig })
+const redisClient = createClient()
 
 const pool = new Pool({
     user: process.env.USER,
@@ -29,6 +30,10 @@ const pool = new Pool({
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 2000
 })
+
+redisClient.on('error', error => console.error(`error when connecting to redis: ${error}`))
+
+await redisClient.connect()
 
 
 
@@ -170,9 +175,25 @@ expressServer.post('/login/validatefields', async (req, res) => {
 
 
 
-let opponentsQueue = []
+const opponentsQueue = []
 
-let activeMatches = []
+
+
+try {
+    await redisClient.ft.create(
+        'index:matches',
+        {
+            '$.players': { type: 'TAG', AS: 'players' },
+        },
+        {
+            ON: 'JSON',
+            PREFIX: 'match:',
+        }
+    )
+}
+catch (error) {
+    console.log(`an error occurred or index already exists: ${error.message}`)
+}
 
 
 
@@ -181,23 +202,6 @@ const moveRulesList = {
         { function: (match, player, request) => match.players[match.current_turn_player] === player, failMessage: "It's your opponent's turn" },
         { function: (match, player, request) => player.hand_cards.find(card => card.uuid === request.card.uuid), failMessage: "Card not found in your hand" },
         { function: (match, player, request) => player.mana_level >= player.hand_cards.find(card => card.uuid === request.card.uuid).mana_cost, failMessage: "You don't have enough mana" },
-        {
-            function: (match, player, request) => {
-                const card = player.hand_cards.find(card => card.uuid === request.card.uuid)
-
-                match.players.forEach((playerToSendUpdate, index) => {
-                    socketServer.to(playerToSendUpdate.socketId).emit(
-                        'card_update',
-                        playerToSendUpdate === player ? { uuid: card.uuid, place: 'table', side: 'self' } : { place: 'table', side: 'opponent' }
-                    )
-                })
-                player.table_cards.push(card)
-                player.hand_cards.splice(player.hand_cards.indexOf(card), 1)
-
-                return true
-            },
-            failMessage: "Could not update the match"
-        },
     ],
 
     attack_enemy_card: [
@@ -209,8 +213,25 @@ const moveRulesList = {
 
 
 
-const matchUpdatefunctions = {
+const matchUpdateFunctions = {//execute if the movement request sent from the user successfully passed the tests according to the game rules
     throw_onto_table: {
+        function: (match, player, request) => {
+            const card = player.hand_cards.find(card => card.uuid === request.card.uuid)
+
+            match.players.forEach((playerToSendUpdate, index) => {
+                socketServer.to(playerToSendUpdate.socketId).emit(
+                    'card_update',
+                    playerToSendUpdate === player ? { uuid: card.uuid, place: 'table', side: 'self' } : { place: 'table', side: 'opponent' }
+                )
+            })
+            player.table_cards.push(card)
+            player.hand_cards.splice(player.hand_cards.indexOf(card), 1)
+
+            return true
+        },
+        failMessage: "Could not update the match"
+    },
+    attack_enemy_card: {
         function: (match, player, request) => {
             const card = player.hand_cards.find(card => card.uuid === request.card.uuid)
 
@@ -232,7 +253,7 @@ const matchUpdatefunctions = {
 
 
 function generateCardUuid() {
-    return `${activeMatches.length}-${Date.now() + Math.round(Math.random() * 1000000)}-${Math.round(Math.random() * 100)}`
+    return `${activeMatches.length}-${Date.now() + Math.round(Math.random() * 1000000)}-${Math.round(Math.random() * 100)}`//`${await redisClient.DBSIZE()}-${Date.now() + Math.round(Math.random() * 1000000)}-${Math.round(Math.random() * 100)}`
 }
 
 
@@ -256,7 +277,7 @@ socketServer.on('connection', (client) => {
 
         if (opponentsQueue.length >= 2) {
             const playersIds = [opponentsQueue.shift(), opponentsQueue.shift()]
-            const matchId = `match-${Date.now()}-${Math.round(Math.random() * 100)}`
+            const matchId = `match:${Date.now()}-${Math.round(Math.random() * 100)}`
             const playersHandCards = [
                 { player: playersIds[0].id, card_id: 'giant_serpent', uuid: generateCardUuid(), mana_cost: 1, life: 5, attack_damage: 3, can_attack: false },
                 { player: playersIds[0].id, card_id: 'wendigo', uuid: generateCardUuid(), mana_cost: 1, life: 4, attack_damage: 2, can_attack: false },
@@ -266,7 +287,7 @@ socketServer.on('connection', (client) => {
                 { player: playersIds[1].id, card_id: 'shadow_demon', uuid: generateCardUuid(), mana_cost: 2, life: 5, attack_damage: 3, can_attack: false },
             ]
 
-            activeMatches.push(
+            await redisClient.json.set(matchId, '$',
                 {
                     players: [
                         {
@@ -276,7 +297,7 @@ socketServer.on('connection', (client) => {
                             life: 10,
                             mana_level: 1,
                             hand_cards: playersHandCards.filter(card => card.player === playersIds[0].id),
-                            table_cards: [],
+                            table_cards: []
                         },
                         {
                             id: playersIds[1].id,
@@ -285,7 +306,7 @@ socketServer.on('connection', (client) => {
                             life: 10,
                             mana_level: 1,
                             hand_cards: playersHandCards.filter(card => card.player === playersIds[1].id),
-                            table_cards: [],
+                            table_cards: []
                         }
                     ],
                     current_turn_player: Math.round(Math.random()),
@@ -323,12 +344,14 @@ socketServer.on('connection', (client) => {
         }
     })
 
+
+
     client.on('move_request', (request) => {
         try {
             const correspondingMatch = activeMatches.find(match => match.players.some(player => player.socketId === client.id))
             const player = correspondingMatch.players.find(player => player.socketId === client.id)
 
-            if (correspondingMatch && player) {
+            if (await redisClient.json.GET('*', { path: '$.' })) {
                 for (const rule of moveRulesList[request.action]) {
                     if (rule.function(correspondingMatch, player, request)) {
                     }

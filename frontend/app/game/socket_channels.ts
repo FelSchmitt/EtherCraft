@@ -1,4 +1,4 @@
-import { Object3D, Scene, TextureLoader } from 'three'
+import { Scene, TextureLoader } from 'three'
 import { Socket, io } from 'socket.io-client'
 import { GLTFLoader } from 'three/examples/jsm/Addons.js'
 import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js'
@@ -74,7 +74,7 @@ export function receiveAndDisplayMatchObject(match: matchObject, scene: Scene, l
                 const cardTexture = textureLoader.load(`http://localhost:3001/cards/${card.card_id}.png`)
 
                 cardModel.name = 'card'
-                // cardModel.children[2].material.map = cardTexture
+                cardModel.children[2].material.map = cardTexture
                 cardModel.position.x = -14
                 cardModel.position.y = 14
                 cardModel.position.z = Math.floor(match.hand_cards.length / 2) * -3 + index * 3
@@ -85,7 +85,7 @@ export function receiveAndDisplayMatchObject(match: matchObject, scene: Scene, l
                 cardModel.userData.place = 'hand'
                 cardModel.userData.uuid = card.uuid
                 cardModel.userData.side = 'self'
-                
+
                 scene.add(cardModel)
                 console.log(cardModel)
             },
@@ -161,8 +161,8 @@ export function receiveCardUpdate(update: cardStateUpdate, scene: Scene, outline
     else if (update.side === 'opponent') {
         if (update.place === 'table' && update.id) {
             const opponentHandCards = scene.children.filter(object => object.userData.side === 'opponent' && object.userData.place === 'hand')
-            const randomlyChosenCard = opponentHandCards[Math.ceil(Math.random() * opponentHandCards.length)]
-            // const cardTexture = textureLoader.load(`http://localhost:3001/cards/${update.id}.png`)
+            const randomlyChosenCard = opponentHandCards[Math.round(Math.random() * opponentHandCards.length)]
+            const cardTexture = textureLoader.load(`http://localhost:3001/cards/${update.id}.png`)
 
             randomlyChosenCard.userData.place = 'table'
             randomlyChosenCard.position.x = 7

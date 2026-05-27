@@ -6,6 +6,7 @@ import { OrbitControls } from 'three/examples/jsm/Addons.js'
 import { GLTFLoader } from 'three/examples/jsm/Addons.js'
 import * as channels from './socket_channels'
 import * as sceneFunctions from './scene_functions'
+import { keyboardCommandsHandler } from './keyboard_commands'
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
 import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js'
@@ -159,8 +160,10 @@ export default function GameScreen() {
         }
 
         window.addEventListener('keydown', pauseAndResumeAnimation)
+        window.addEventListener('keydown', keyboardCommandsHandler)
         gameScreen.addEventListener('click', sceneMouseInteraction)
         document.getElementById('reset-scene')?.addEventListener('click', () => { sceneFunctions.resetScene(scene, loader, light) })
+        document.getElementById('get-object-vectors')?.addEventListener('click', getObject)
 
         for (const input of inputs) {
             input.addEventListener('change', detectVectorInputChange)

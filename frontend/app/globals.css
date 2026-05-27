@@ -88,7 +88,7 @@
 }
 
 #chat-container.closed {
-  right: 98%;
+  right: 100%;
 }
 
 #test-tools {
@@ -97,5 +97,14 @@
 }
 
 #test-tools.closed {
-  bottom: 99%;
+  bottom: 100%;
+}
+
+#object-positions-display {
+  left: 81%;
+  transition: all 0.3s;
+}
+
+#object-positions-display.closed {
+  left: 100%;
 }

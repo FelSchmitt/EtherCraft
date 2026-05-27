@@ -6,7 +6,7 @@ export type CardData = {
     type: string,
     classes: string[],
     mana_cost: number,
-    abilities: Object[],
+    abilities: {}[],
     belongs_to_decks: string[]
 }
 
