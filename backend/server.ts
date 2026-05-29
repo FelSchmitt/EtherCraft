@@ -49,8 +49,8 @@ expressServer.post('/login/validatefields/newaccount', async (req: Request, res:
     try {
         const messages: { code: [number, number], message: string }[] = []
 
-        const idQuery = await pool.query(`select account_id from users where account_id = '${req.body.account_id}'`)
-        const nicknameQuery = await pool.query(`select user_nickname from users where user_nickname = '${req.body.user_nickname}'`)
+        const idQuery = await pool.query(`select account_id from users where account_id = $1`, [req.body.account_id])
+        const nicknameQuery = await pool.query(`select user_nickname from users where user_nickname = $1`, [req.body.username])
 
         if (idQuery.rowCount > 0) {
             messages.push({ code: [0, 0], message: 'account id already exists. choose another one' })
@@ -80,7 +80,17 @@ expressServer.post('/login/validatefields/newaccount', async (req: Request, res:
         if (messages.length > 0) {
             res.status(422).send({ messages })
         } else {
-            await pool.query(`insert into users (account_id, password, access_token, user_nickname, register_date, status) values ('${req.body.account_id}', '${req.body.password}', 1, '${req.body.user_nickname}', '${req.body.register_date}', 'player') returning *`)
+            await pool.query(
+                `insert into users (account_id, password, access_token, user_nickname, register_date, status) values ($1, $2, $3, $4, $5, $6) returning *`,
+                [
+                    req.body.account_id,
+                    req.body.password,
+                    Date.now() + Math.round(Math.random() * 10000000),
+                    req.body.user_nickname,
+                    req.body.register_date,
+                    'player'
+                ]
+            )
             res.send({ message: 'account successfully created' })
         }
     } catch (error) {
@@ -95,7 +105,7 @@ expressServer.post('/login/validatefields', async (req: Request, res: Response) 
     try {
         const messages: Array<{ code: number, message: string }> = []
 
-        const query = await pool.query(`select * from users where account_id = '${req.body.account_id}'`)
+        const query = await pool.query(`select * from users where account_id = $1`, [req.body.account_id])
 
         if (query.rowCount === 0) {
             messages.push({ code: 0, message: 'account id not found. check if it was written correctly' })
