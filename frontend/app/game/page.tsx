@@ -134,7 +134,7 @@ export default function GameScreen() {
                 if (group) {
                     if (selectedObject) {
                         if (group.name === 'table' && selectedObject.name === 'card' && selectedObject.userData.side === 'self') {
-                            channels.socketConnection.emit('move_request', { card: selectedObject.userData, action: 'throw_onto_table' })
+                            channels.socketConnection.emit('move_request', { card: selectedObject.userData, mode: 'classic', action: 'throw_onto_table' })
                             selectedObject = null
                             outlinePass.selectedObjects = []
                         }

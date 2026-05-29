@@ -65,8 +65,7 @@ side handles mainly the aesthetic part, that is the textures, 3D, sound effects 
 with the Canvas API of the web. If you like to control the flow of the drawing with just code and math, I'd recommend 
 checking it out.
 
-- The 3D geometries of the game are modeled in Blender, and the setup of the models are saved in .blend archives currently in 
-the root of the project, and then exported as `.glb` archives in the `frontend/public/models` folder
+- The 3D geometries of the game are modeled in Blender, and the setup of the geometries are saved in the `blender_projects` folder, and then exported as `.glb` archives in the `frontend/public/models` folder
 
 - The structure and tables of the database are in the `backend/database_setup.sql`
 
