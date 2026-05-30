@@ -18,12 +18,12 @@ const corsConfig = {
     credentials: true
 }
 
-const pool = new Pool({
+export const pool = new Pool({
     user: process.env.USER,
     host: 'localhost',
     database: 'ethercraft',
     password: process.env.DATABASE_PASSWORD,
-    port: process.env.PORT ? parseInt(process.env.PORT) : 5432,
+    port: 5000,
     max: 20,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 2000
@@ -32,7 +32,7 @@ const pool = new Pool({
 const expressServer = express()
 const server = http.createServer(expressServer)
 const socketServer = new Server(server, { cors: corsConfig })
-const redisClient = createClient()
+export const redisClient = createClient()
 
 const opponentsQueue: gameServerTypes.playerIdentifiers[] = []
 
@@ -79,13 +79,14 @@ expressServer.post('/login/validatefields/newaccount', async (req: Request, res:
 
         if (messages.length > 0) {
             res.status(422).send({ messages })
-        } else {
+        }
+        else {
             await pool.query(
                 `insert into users (account_id, password, access_token, user_nickname, register_date, status) values ($1, $2, $3, $4, $5, $6) returning *`,
                 [
                     req.body.account_id,
                     req.body.password,
-                    Date.now() + Math.round(Math.random() * 10000000),
+                    `${Date.now()}_${Math.round(Math.random() * 10000)}_${['card', 'user', 'player', 'game'][Math.round(Math.random() * 3)]}`,
                     req.body.user_nickname,
                     req.body.register_date,
                     'player'
@@ -109,7 +110,8 @@ expressServer.post('/login/validatefields', async (req: Request, res: Response) 
 
         if (query.rowCount === 0) {
             messages.push({ code: 0, message: 'account id not found. check if it was written correctly' })
-        } else {
+        }
+        else {
             if (req.body.password !== query.rows[0].password) {
                 messages.push({ code: 1, message: 'password incorrect. check if it was written correctly' })
             }
@@ -168,7 +170,7 @@ socketServer.on('connection', (client: Socket) => {
         opponentsQueue.push({ id: identifiers.id, socketId: client.id, nickname: identifiers.nickname })
 
         if (opponentsQueue.length >= 2) {
-            const playersIds = [opponentsQueue.shift()!, opponentsQueue.shift()!]
+            const playersIds = [opponentsQueue.shift(), opponentsQueue.shift()]
             const matchId = `match:${Date.now()}-${Math.round(Math.random() * 100)}`
             const uuids = await Promise.all(Array.from({ length: 6 }, () => generateCardUuid()))
 
@@ -239,12 +241,13 @@ socketServer.on('connection', (client: Socket) => {
     })
 
 
+
     client.on('move_request', async (request: gameServerTypes.moveRequestType) => {
         try {
             const correspondingMatch = await redisClient.ft.search('index:matches', '')
 
             if (correspondingMatch) {
-                for (const rule of moveRulesList[request.action]) {
+                for (const rule of moveRulesList[request.mode][request.action]) {
                     if (rule.function()) {
                     }
                     else {

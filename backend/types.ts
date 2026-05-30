@@ -29,6 +29,6 @@ export type moveRequestType = {
         place: 'hand' | 'table',
         side: 'self' | 'opponent'
     },
-    mode: 'classic' | 'mode_that_i_cant_think_of_a_name_yet' | 'chaos' | 'ritual' | 'dungeon_run' | 'eclipse',
+    mode: 'classic' | 'destiny' | 'chaos' | 'ritual' | 'dungeon_run' | 'eclipse',
     action: 'throw_onto_table' | 'attack_enemy_card'
 }

@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken'
 import { Request, Response, NextFunction } from 'express'
-import { pool } from './db'
+import { pool } from './server'
 
 export async function verifyToken(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {

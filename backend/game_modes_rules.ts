@@ -1,4 +1,5 @@
 import { matchObject, matchPlayer, moveRequestType } from "./types"
+import { redisClient } from "./server"
 
 export const moveRulesList = {
     classic: {
@@ -14,8 +15,7 @@ export const moveRulesList = {
                     player.hand_cards.splice(player.hand_cards.indexOf(card), 1)
 
                     return true
-                },
-                failMessage: "Could not update the match"
+                }
             }
         ],
         attack_enemy_card: [
@@ -30,8 +30,7 @@ export const moveRulesList = {
                     player.hand_cards.splice(player.hand_cards.indexOf(card), 1)
 
                     return true
-                },
-                failMessage: "Could not update the match"
+                }
             }
         ]
     }
