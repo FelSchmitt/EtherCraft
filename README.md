@@ -4,7 +4,7 @@
 
 <h2 align="center">A Full Stack Project</h2>
 
-<p align="center">Ethercraft is a complete fantasy game about duels with an opponent in a board with cards (and a tavern background scenery), in a very RPG style, that was heavily inspired by the original game <a style="font-weight: bold" href="https://hearthstone.blizzard.com/en-us">HEARTHSTONE</a> by Blizzard Entertainment.</p>
+<p align="center">Ethercraft is a complete fantasy game about duels with an opponent in a board with cards (and a tavern background scenery), in a RPG style, that was heavily inspired by the original game <a style="font-weight: bold" href="https://hearthstone.blizzard.com/en-us">HEARTHSTONE</a> by Blizzard Entertainment.</p>
 <br />
 
 <h2>Main Features</h2>
@@ -38,7 +38,7 @@ side handles mainly the aesthetic part, that is the textures, 3D, sound effects 
 
 - Socket.io Client
 
-<h3>And the Server Side Stack:</h3>
+<h3>And the Server Side Stack</h3>
 
 - Node.JS
 
