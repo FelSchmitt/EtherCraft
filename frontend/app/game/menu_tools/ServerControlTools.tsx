@@ -13,12 +13,12 @@ export function ServerControlTools() {
                 <span className='tools-menu-label'>Join Waiting Queue</span>
             </div>
 
-            <div onClick={() => { socketConnection.emit('clear_waiting_queue', 'message') }} className='tools-menu-option'>
+            <div onClick={() => { socketConnection.emit('clear_waiting_queue', 'clear') }} className='tools-menu-option'>
                 <img src='/icons/clear.png' className='tools-menu-image' />
                 <span className='tools-menu-label'>Clear Waiting Queue</span>
             </div>
 
-            <div onClick={() => { socketConnection.emit('delete_all_matches', 'message') }} className='tools-menu-option'>
+            <div onClick={() => { socketConnection.emit('delete_all_matches', 'delete') }} className='tools-menu-option'>
                 <img src='/icons/delete.png' className='tools-menu-image' />
                 <span className='tools-menu-label'>Delete All Matches</span>
             </div>

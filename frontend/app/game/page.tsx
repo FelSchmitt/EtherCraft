@@ -49,6 +49,20 @@ export default function GameScreen() {
         const inputs: NodeListOf<HTMLInputElement> = document.querySelectorAll('.vectorinput')
 
         loader.load(
+            'models/tavern_background_default.glb',
+            function (gltf) {
+                gltf.scene.name = 'tavern'
+                scene.add(gltf.scene)
+                console.log('tavern loaded')
+            },
+            function (progress) { },
+            function (error) {
+                console.error(error)
+                alert(`tavern model failed: ${error}`)
+            }
+        )
+
+        loader.load(
             'models/game_table.glb',
             function (gltf) {
                 gltf.scene.name = 'table'
@@ -185,7 +199,7 @@ export default function GameScreen() {
         <>
             <canvas id='gamescreen'></canvas>
 
-            <div id='chat-container' onClick={() => { (document.getElementById('chat-container') as HTMLDivElement).classList.toggle('closed') }} className='absolute w-[20vw] h-[50vh] border-4 border-zinc-500 flex flex-col justify-evenly items-center'>
+            <div id='chat-container' className='absolute w-[20vw] h-[50vh] border-4 border-zinc-500 flex flex-col justify-evenly items-center'>
                 <div id='test-chat' className='w-[90%] h-[80%] bg-[#888] flex flex-col overflow-y-scroll'></div>
 
                 <input type='text' id='message-input' className='bg-white border-[3px] border-[#4784ff] w-[90%]' />

@@ -82,7 +82,7 @@ expressServer.post('/login/validatefields/newaccount', async (req: Request, res:
         }
         else {
             await pool.query(
-                `insert into users (account_id, password, access_token, user_nickname, register_date, status) values ($1, $2, $3, $4, $5, $6) returning *`,
+                `insert into users (account_id, password, access_token, user_nickname, register_date, status) values ($1, $2, $3, $4, $5, $6)`,
                 [
                     req.body.account_id,
                     req.body.password,

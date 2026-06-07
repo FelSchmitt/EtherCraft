@@ -6,9 +6,9 @@ export default function Home() {
       <div className="flex flex-col justify-center items-center">
         <h1 className="font-['thecenturion'] text-(--gold) text-[22vw] text-shadow-[-8px_8px_4px_#0009] md:text-[9vw]">EtherCraft</h1>
         <div className="flex">
-          <Link href="/login" className="border-(--gold) border-4 rounded-[7px] bg-(--gray) text-white p-2 text-[20px] font-bold transition-all duration-300 hover:bg-(--goldgray)">ENTRE</Link>
-          <p className="text-white text-[40px] font-['cloisterblack'] mx-5">ou</p>
-          <Link href="/login/register" className="border-(--gold) border-4 rounded-[7px] bg-(--gray) text-white p-2 text-[20px] font-bold transition-all duration-300 hover:bg-(--goldgray)">CADASTRE-SE</Link>
+          <Link href="/login" className="border-(--gold) border-4 rounded-[7px] bg-(--gray) text-white p-2 text-[20px] font-bold transition-all duration-300 hover:bg-(--goldgray)">LOGIN</Link>
+          <p className="text-white text-[40px] font-['cloisterblack'] mx-5">or</p>
+          <Link href="/login/register" className="border-(--gold) border-4 rounded-[7px] bg-(--gray) text-white p-2 text-[20px] font-bold transition-all duration-300 hover:bg-(--goldgray)">REGISTER</Link>
         </div>
       </div>
     </main>
