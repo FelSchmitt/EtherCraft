@@ -68,7 +68,7 @@ export function receiveMatchDataToDisplayInConsole(message: any) {
 export function receiveAndDisplayMatchObject(match: matchObject, scene: Scene, loader: GLTFLoader, textureLoader: TextureLoader) {
     match.hand_cards.forEach((card, index) => {
         loader.load(
-            'models/card.glb',
+            'models/card_1.glb',
             function (gltf) {
                 const cardModel: any = gltf.scene.children[0]
                 const cardTexture = textureLoader.load(`http://localhost:3001/cards/${card.card_id}.png`)
@@ -99,7 +99,7 @@ export function receiveAndDisplayMatchObject(match: matchObject, scene: Scene, l
     
     for (let i = 0; i < match.opponent.hand_cards; i++) {
         loader.load(
-            'models/card.glb',
+            'models/card_1.glb',
             function (gltf) {
                 const cardModel = gltf.scene.children[0]
                 

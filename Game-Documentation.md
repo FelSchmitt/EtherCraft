@@ -57,7 +57,7 @@
 
 - **DESTINY**: A mode that is more unpredictable. When cards attack each other, there's a chance the attack will miss the target, be weak or strong. The **Judge** (a character on the side edge of the board) has the power of decision: It rolls dice (similar to real-life board games) that randomly tell what players can do and how, and can choose whose player is the turn. This mode gives higher rewards to the winner for taking higher risks.
 
-- **CHAOS**: Each turn, before any player acts, a random card is drawn from a shared global 'Chaos Deck' and its effect is applied to the entire board. Chaos effects can be things like: all minions swap sides, every card on the board gains +1 attack, a random card is destroyed, both players draw two extra cards, mana costs are halved for the turn, etc. Neither player controls the chaos deck, so both must adapt on the fly. Wins the same as CLASSIC (bring health of opponent's hero card to zero).
+- **CHAOS**: Each turn, before any player acts, a random card is drawn from a shared global 'Chaos Deck' and its effect is applied to the entire board. Chaos effects can be things like: all minions swap sides, every card on the board gains +1 attack, a random card is destroyed, both players draw two extra cards, mana costs are halved for the turn, etc. Neither player controls the chaos deck, so both must adapt on the fly.
 
 - **RITUAL**: There is a shared 'Altar' zone in the center of the board. Players can sacrifice their own cards to the Altar instead of playing them normally, accumulating 'Ritual Energy'. Once enough energy is stored, a player can spend it to unleash powerful spells that have dramatic board-wide effects — things that would be too strong to attach to a regular card cost. The tension comes from choosing between playing a card for its stats vs. sacrificing it for a potentially game-winning ritual.
 
@@ -78,29 +78,35 @@
 
 ## Classic Mode
 
-- **Setup**: All players start with a mana level of 1, with full capacity of 1. All players must choose a card from the deck that they joined with to take the Hero Card role.
+- **Setup**: Before the match begins, each player browses their deck and chooses a card to be their **Hero Card**. The chosen Hero Card gets it's health value set to 30, no matter the previous or default value. Both players start with 1 mana and full capacity of 1.
+
+- **Board Card Limit**: The number of board minions are limited to 7 cards.
 
 - **Mana Levels**: Every turn of a player, their mana level restores and gets +1 of full capacity until it reaches 16. The full capacity of mana levels are always limited to 16, no matter how many turns have passed.
 
-- **Victory**: Wins the one that depletes the health (zero or negative numbers) of the Hero Card of the opponent.
+- **Victory**: The first player to deplete the opponent's Hero Card health (0 or negative numbers) wins. Classic is the purest expression of the game: no external forces, no timers, no sacrifices — just the cards played and the decisions made.
 
 ## Destiny
 
-- **Setup**: Same as Classic — each player picks a Hero Card and starts at 1 mana. The Judge is summoned at the left edge of the board.
+- **Setup**: Neither player chooses their Hero Card. Instead, the match opens with the **Rite of Fate** — the Judge draws 3 cards at random from each player's shuffled deck and lays them face-up in a row. Each player simultaneously points to one of their three revealed cards; that card becomes their Hero Card. The other two are returned to their deck. Because neither player can fully control this moment, both start at 2 mana instead of 1 — the Judge's boon for surrendering choice to fate. The Judge then takes its position at the left edge of the board.
+
+- **Board Card Limit**: Board minions limited to 7 cards — same as Classic.
 
 - **The Judge's Dice**: At the start of every turn (before the active player acts), the Judge rolls two dice whose results are publicly visible to both players. The first die is the **Action Die** (6-sided): it determines a constraint or bonus for the active player this turn, such as "can only play one card", "all cards played cost 1 less mana", "cannot attack with minions that have less than 3 attack", "draw an extra card", "the first card you play deals double damage", or "skip your attack phase entirely". The second die is the **Fate Die** (4-sided): it determines hit probability for all attacks this turn — on a 1, all attacks have a 25% chance to miss; on a 2, attacks are normal; on a 3, attacks have 25% chance to deal double damage; on a 4, the first attack this turn triggers a chain and hits every enemy minion for half damage.
 
-- **Turn Control**: Once every three turns (at the start of a player's turn), the Judge may roll the **Reversal Coin** (2-sided). On a reversal, the turn passes back to the opponent instead, who then plays under whatever the dice showed. The player whose turn was reversed does not lose their coming turn — it is simply delayed by one cycle.
+- **Turn Control**: Once every three turns (at the start of a player's turn), the Judge throws the **Reversal Coin** (2-sided). If it lands showing the Continuous Side, the player plays the turn normally. If it lands showing the Reversal Side, the turn passes back to the opponent instead, who then plays under whatever the dice showed. The player whose turn was reversed does not lose their coming turn — it is simply delayed by one cycle.
 
-- **Comeback Mechanic**: If a player's Hero Card health drops below 30% of its maximum, the Judge grants them a **Mercy Roll** — a free reroll of the Action Die once per game. This gives the losing player a chance to get a favorable action constraint and fight back.
+- **Comeback Mechanic**: If a player's Hero Card health is way below the health of the opponent Hero Card, the Judge grants them a **Mercy Roll** — a free reroll of the Action Die once per game. This gives the losing player a chance to get a favorable action constraint and fight back.
 
 - **Ranked**: Destiny has its own separate ranked ladder. Because of variance, rating changes are dampened: wins give slightly less rating and losses deduct slightly less, making the ladder a longer but fairer grind.
 
-- **Victory**: Same as Classic — bring the opponent's Hero Card health to zero.
+- **Victory**: There are two ways to win. The standard path is bringing the opponent's Hero Card to 0 health. The second is the **Judge's Verdict**: if the same player receives three consecutive favorable Action Die results (a roll of 4 or higher, three turns in a row), the Judge intervenes and ends the match in that player's favor — declaring that fate itself has chosen a winner, regardless of the current health totals. The board displays a warning after the second favorable roll, so both players know a Verdict is one turn away, adding a dramatic final moment of tension.
 
 ## Chaos
 
-- **Setup**: Same as Classic. A shared **Chaos Deck** of 20 effect cards is shuffled and placed in the center of the board, visible as a face-down pile with a counter showing how many remain.
+- **Setup**: There's no Hero Card. Instead, cards on both players sides are divided in the **Master Zone**(Master Cards) and the **Defense Zone**(Defending Cards). Defending cards are responsible for being the target of enemy attacks, being a middle field. Players cannot target the enemy Master Zone if there are defending cards in the way, they must destroy all of them to attack the master cards. In the beginning, 3 random cards are automatically drawn from each of the players decks and thrown on the Master Zone for them. Both players start at 1 mana.
+
+- **Board Card Limit**: The Master Zone can have 3 cards at maximum. The Defense Zone is limited to 6 cards.
 
 - **Chaos Phase**: At the very start of each turn (before the active player does anything), the top card of the Chaos Deck is flipped and its effect is immediately applied to the board for the entirety of that turn only, unless the effect explicitly says it persists.
 
@@ -111,36 +117,35 @@
   - *Surge*: All minions gain +2 attack until end of turn.
   - *Silence*: All special abilities are suppressed for this turn; cards act as vanilla stat blocks.
   - *Second Wind*: Both players restore mana to full capacity.
-  - *The Cull*: The minion with the lowest health on each side is immediately destroyed.
+  - *The Cull*: The minion with the lowest health on each side is immediately destroyed. If there are multiple minions with the same lowest health value of all of the minions, a random one with that lowest value is destroyed.
   - *Mirror*: Both players draw two cards but must give one random card from their hand to the opponent.
-  - *Void Rift*: The Hero Cards of both players swap health values temporarily for this turn only, reversed at turn end.
-  - *Amnesia*: The active player forgets their hand — all cards in hand are shuffled back into the deck.
+  - *Void Rift*: The Master Cards of both players swap health values temporarily for this turn only, reversed at turn end.
 
-- **Empty Chaos Deck**: If the Chaos Deck runs out, it reshuffles with all 20 effects and becomes increasingly volatile: from this point on, two cards are drawn and applied every turn instead of one.
+- **Empty Chaos Deck**: If the Chaos Deck runs out, it reshuffles with all 9 effects back. For the third time the Chaos Deck runs out, it becomes increasingly volatile: from this point on, two cards are drawn and applied every turn instead of one.
 
-- **Victory**: Same as Classic — bring the opponent's Hero Card health to zero.
+- **Victory**: Wins the one that destroys all the Master Cards of the opponent, no matter if there are still cards in the Defense Zone.
 
 ## Ritual
 
-- **Setup**: Same as Classic. The center of the board shows the **Altar** — a glowing stone slab that tracks **Ritual Energy** for each player separately, displayed as two filling bars.
+- **Setup**: There are no Hero Cards in Ritual. Each player instead has a **Soul Vessel** — a glowing artifact displayed on their side of the board with 20 health, representing their life force. The Soul Vessel cannot attack, cannot be targeted by regular minion attacks, and does not count as a card for any game mechanic. The only ways to damage a Soul Vessel are through Ritual Spells and through card abilities that explicitly name the opponent or "any target". Players build their board with minions as usual and start at 1 mana. The Altar begins with 3 pre-loaded Ritual Energy for each player, representing the ambient magic of the ritual ground.
 
 - **Sacrificing**: Instead of playing a card onto the board normally, a player may place it on the Altar as a sacrifice. A sacrificed card is permanently removed from the game (not sent to the Graveyard). The Ritual Energy gained equals the card's mana cost. Cards with a mana cost of 0 cannot be sacrificed.
 
-- **Unleashing a Ritual**: When a player's Ritual Energy bar reaches a set threshold, they may spend the energy during their turn (before or after other actions) to cast a **Ritual Spell**. Each player can only cast one Ritual Spell per turn. Spending energy does not require a mana cost — it is paid entirely from the accumulated Ritual Energy. Energy thresholds and spells:
-  - **Minor Ritual (5 energy)** — *Bloodbind*: Restore your Hero Card's health by 6. | *Ashen Strike*: Deal 4 damage to any target.
-  - **Moderate Ritual (12 energy)** — *Soul Harvest*: Draw 3 cards. | *Purge*: Destroy any one enemy minion outright.
-  - **Major Ritual (22 energy)** — *Dark Convergence*: Deal 3 damage to all enemy minions and the opponent's Hero Card. | *Summon from the Deep*: Summon a random Rare card from outside the game onto your side of the board.
-  - **Grand Ritual (35 energy)** — *Annihilation*: Destroy all minions on the board. | *Rebirth Cycle*: Resurrect all your destroyed minions as 1/1 copies (stats reset, abilities kept).
+- **Unleashing a Ritual**: When a player's Ritual Energy bar reaches a set threshold, they may choose to spend the energy during their turn (before or after other actions) to cast a **Spell**. Each player can only cast one Ritual Spell per turn. Spending energy does not require a mana cost — it is paid entirely from the accumulated Ritual Energy. Energy thresholds and spells:
+  - **Minor Ritual (5 energy)** — *Bloodbind*: Restore your Soul Vessel's health by 6. | *Ashen Strike*: Deal 4 damage to any target (including the enemy Soul Vessel).
+  - **Moderate Ritual (12 energy)** — *Soul Harvest*: Draw 3 cards. | *Purge*: Destroy any one enemy minion outright. | *Rebirth*: Ressurect one random defeated card from the Graveyard back to the board.
+  - **Major Ritual (22 energy)** — *Dark Convergence*: Deal 3 damage to all enemy minions and the opponent's Soul Vessel. | *Summon from the Deep*: Summon a random Rare card from outside the game onto your side of the board.
+  - **Grand Ritual (35 energy)** — *Annihilation*: Destroy all minions on the board. | *Mass Necromancy*: Resurrect all your destroyed minions as 1/1 copies (stats reset, abilities kept).
 
-- **Strategic tension**: Sacrificing a strong card gives more energy but removes a board presence that could have been used to fight. Sacrificing weak or useless cards is slower but preserves board state.
+- **Strategic tension**: Sacrificing a strong card gives more energy but removes a board presence that could have been used to fight. Sacrificing weak or useless cards is slower but preserves board state. Because the Soul Vessel is immune to minion attacks, the only path to victory runs through the Altar.
 
-- **Victory**: Same as Classic — bring the opponent's Hero Card health to zero.
+- **Victory**: Reduce the opponent's Soul Vessel to 0 health exclusively through Ritual Spells and card abilities. Minions alone cannot win the game — no matter how dominant the board, a player who neglects the Altar will find themselves unable to close out the match.
 
 ## Dungeon Run
 
-- **Setup**: The player selects a starting deck of 15 cards (smaller than a standard deck, to represent the early frailty of the run). A **Dungeon** is selected — each Dungeon is a named themed location with 7 floors (e.g. *The Ashen Crypt*, *The Stormspire Peaks*, *The Fungal Labyrinth*). Each floor has a pre-built AI deck with a specific identity and strategy.
+- **Setup**: The player selects a starting deck of 15 cards (smaller than a standard deck, to represent the early frailty of the run) and chooses one of them as their Hero Card before entering. A **Dungeon** is then selected — each Dungeon is a named themed location with 7 floors (e.g. *The Ashen Crypt*, *The Stormspire Peaks*, *The Fungal Labyrinth*). Each floor has a pre-built AI deck with a specific identity and strategy. The AI opponents also have Hero Cards and play by standard rules.
 
-- **Between Floors**: After defeating an AI opponent, the player is presented with three **Draft Rewards** — random cards drawn from a pool appropriate to the dungeon's theme. The player picks one to permanently add to their run deck. This is the only way to grow the deck during a run.
+- **Between Floors**: After defeating an AI opponent, the player is presented with three **Draft Rewards** — random cards drawn from a pool appropriate to the dungeon's theme. The player picks one to permanently add to their run deck. This is the only way to grow the deck during a run. The player may also swap their Hero Card to any card currently in their run deck between floors.
 
 - **Floor Escalation**: Each floor the AI gets progressively stronger: larger decks, higher-rarity cards, and starting bonuses. Floor 4+ AI opponents get one free card played at the start of the match (a "head start" card). Floor 6+ AI opponents begin with their mana capacity already at 3 instead of 1.
 
@@ -148,21 +153,22 @@
 
 - **Losing**: If the player loses any match during the run, the run ends immediately. The run deck is discarded — it only exists for the duration of that run. However, **every completed floor (even on a losing run) earns a small number of Coins**, and completing a full run for the first time in a given Dungeon earns a permanent cosmetic reward unique to that Dungeon.
 
-- **Permadeath variant (Ironclad mode)**: An optional harder version where no card draft rewards are offered at all — the player must clear all 7 floors with only their starting 15-card deck. Ironclad clears give substantially higher Coin rewards and count toward a special profile badge.
+- **Permadeath variant (Ironclad mode)**: An optional harder version where no card draft rewards are offered at all — the player must clear all 7 floors with only their starting 15-card deck, and the Hero Card chosen at the start cannot be swapped. Ironclad clears give substantially higher Coin rewards and count toward a special profile badge.
 
-- **Victory**: Clearing all 7 floors of a Dungeon completes the run. Rewards: a Card Pack, bonus Coins scaled to how many floors were cleared without losing, and Mode Mastery XP for Dungeon Run.
+- **Victory**: Clearing all 7 floors of a Dungeon completes the run by defeating its final Boss. There is no opponent to outlast — the only measure of success is surviving every floor. Rewards: a Card Pack, bonus Coins scaled to how many floors were cleared without losing, and Mode Mastery XP for Dungeon Run.
 
 ## Eclipse
 
-- **Setup**: Same as Classic. A large **Eclipse Timer** is displayed prominently on the board, starting at 12 turns and counting down by 1 at the end of each player's turn (so roughly 6 full rounds before it triggers).
+- **Setup**: There are no Hero Cards in Eclipse. Each player has a raw **Life Pool** of 30 health displayed as a counter — an exposed, unprotected total that any minion can attack directly. Players build boards and attack each other's Life Pools without any single card serving as an anchor. Both players start at 1 mana. A large **Eclipse Timer** is displayed prominently on the board, starting at 12 turns and counting down by 1 at the end of each player's turn (so roughly 6 full rounds before it triggers).
 
-- **Eclipse Phase**: When the timer hits zero, the Eclipse Phase begins and never ends for the rest of the match. Its effects apply permanently from that point:
+- **Eclipse Phase**: When the timer hits zero, the Eclipse Phase begins and only ends if a player resets it by destroying all enemy minions. Its effects apply from that point:
   - All minions currently on the board (and any summoned afterward) have their attack and health doubled.
-  - At the end of every player's turn, both Hero Cards take 2 unavoidable damage regardless of taunts, shields, or minion presence.
+  - At the end of every player's turn, both Life Pools take 2 unavoidable damage.
   - Mana capacity is locked at whatever value it reached when the Eclipse triggered — it no longer grows.
+  - Any player who enters the Eclipse Phase with **no minions on the board** loses 4 additional health immediately, and every subsequent turn they spend with an empty board costs them 3 extra health on top of the standard 2.
 
 - **Resetting the Timer**: A player can delay the Eclipse by destroying **all** enemy minions in a single turn (using attacks, spells via card abilities, or any combination). If they do, the Eclipse Timer resets to **6 turns** (not the original 12). The timer can be reset multiple times, but each reset gives less time, creating escalating pressure.
 
-- **Strategic implications**: Slow control decks that rely on out-valuing the opponent over many turns are severely punished — the permanent 2 damage per turn creates an inevitable clock. Aggressive tempo decks that can clear the board repeatedly can delay the Eclipse repeatedly, but at the cost of their own resources. The mode rewards decisive action and punishes passivity.
+- **Strategic implications**: Because there is no Hero Card to protect, every minion on the board is simultaneously an attacker and the only thing standing between the opponent's minions and the Life Pool. Defensive strategies centered on one powerful card are meaningless here — board presence is the only form of defense. The Eclipse Phase punishes anyone who falls behind on board state doubly: first through the doubled minions attacking the exposed Life Pool, and then through the bonus damage for having an empty board.
 
-- **Victory**: Same as Classic — bring the opponent's Hero Card health to zero. Most Eclipse matches end either before the Eclipse Phase begins (via an aggressive rush) or very shortly after it triggers, since the combined damage pressure makes long games impossible.
+- **Victory**: The first player to reduce the opponent's Life Pool to 0 wins. Unlike other modes where damage must route through specific targets, Eclipse matches are decided entirely by board control — whoever commands the board commands the game.
