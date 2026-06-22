@@ -7,11 +7,13 @@
 
 - Cards are of different types, according to their rarity and how hard it is to get them: Common, Uncommon, Rare, Epic, Legendary, Titanic and Colossal.
 
-- Titanic and Colossal card types are the most appealing in the game, have huge health and attack damage by default. Titan Cards are inspired on elements and the forces of nature: oceans, winds, lightnings, volcanoes, tectonic plates, the sun, etc. On the other hand, Colossus Cards are biologically themed: Giant beasts of flesh and bones, tree trunks and vegetal matter that serve as organs, flesh in symbiosis with fungus colonies, etc. When receiving high damage from an enemy card, Titan Cards can split their health and force to create smaller ones (for example a legendary card, two epic cards or a lot of common ones). Colossus Cards regenerate health in some situations. All titanic cards have the **Elemental** class.
+- Titanic and Colossal card types are the most appealing in the game, have huge health and attack damage by default. Titan Cards are inspired on elements and the forces of nature: oceans, winds, lightnings, volcanoes, tectonic plates, the sun, etc. On the other hand, Colossus Cards are biologically themed: Giant beasts of flesh and bones, tree trunks and vegetal matter that serve as organs, flesh in symbiosis with fungus colonies, etc. When receiving high damage from an enemy card, Titan Cards can split their health and force to create smaller ones (e.g. a legendary card, two epic cards or multiple common ones). Colossus Cards regenerate health in some situations. All titanic cards have the **Elemental** class.
 
-- A card can or not have a special ability. Most abilities activate when the card is thrown on the table, but some activate while it's still in the player's hand. Common and Uncommon cards have no abilities, but Rare types onwards can have one, or even two if they are Legendary or higher rarity.
+- A card can or not have a special ability. Most abilities activate when the card is thrown on the table, but some activate while it's still in the player's hand. Common and Uncommon cards have no abilities, but Rare types onward can have one, or even two if they are Legendary or higher rarity.
 
 - Cards have also Classes, which make their interactions more dynamic. The classes of a card influence the damage dealt to cards of other specific classes, the damage received from certain classes, the special abilities of other cards and other mechanics. A card can have one or more classes regardless of its rarity.
+
+- **Defensive** is a special class, which makes cards able to prevent enemies to target cards "behind" it, so enemy cards must destroy defensive minions in the way to attack the vulnerable target (the player or other life pool that upon depletion defines victory).
 <br />
 
 ## Account Profiles
@@ -49,7 +51,6 @@
 
 - **Seasonal Ladder**: Each season lasts two months. Players compete in ranked matches (available in Classic, Destiny, and Eclipse modes). A deck used in ranked play cannot be used again in ranked that season once it has accumulated 5 losses with that exact configuration. At season end, rewards scale with the highest rank reached: exclusive seasonal cards and permanent cosmetics for that season.
 <br />
-
 
 ## Game Modes
 
@@ -92,7 +93,7 @@
 
 - **Board Card Limit**: Board minions limited to 7 cards — same as Classic.
 
-- **The Judge's Dice**: At the start of every turn (before the active player acts), the Judge rolls two dice whose results are publicly visible to both players. The first die is the **Action Die** (6-sided): it determines a constraint or bonus for the active player this turn, such as "can only play one card", "all cards played cost 1 less mana", "cannot attack with minions that have less than 3 attack", "draw an extra card", "the first card you play deals double damage", or "skip your attack phase entirely". The second die is the **Fate Die** (4-sided): it determines hit probability for all attacks this turn — on a 1, all attacks have a 25% chance to miss; on a 2, attacks are normal; on a 3, attacks have 25% chance to deal double damage; on a 4, the first attack this turn triggers a chain and hits every enemy minion for half damage.
+- **The Judge's Dice**: At the start of every turn (before the active player acts), the Judge rolls two dice whose results are publicly visible to both players. The first is the **Action Die** (6-sided): it determines a constraint or bonus for the active player this turn, such as "can only play one card", "all cards played cost 1 less mana", "cannot attack with minions that have less than 3 attack", "draw an extra card", "the first card you play deals double damage", or "skip your attack phase entirely". The second die is the **Fate Die** (4-sided): it determines hit probability for all attacks this turn — on a 1, all attacks have a 25% chance to miss; on a 2, attacks are normal; on a 3, attacks have 25% chance to deal double damage; on a 4, the first attack this turn triggers a chain and hits every enemy minion for half damage.
 
 - **Turn Control**: Once every three turns (at the start of a player's turn), the Judge throws the **Reversal Coin** (2-sided). If it lands showing the Continuous Side, the player plays the turn normally. If it lands showing the Reversal Side, the turn passes back to the opponent instead, who then plays under whatever the dice showed. The player whose turn was reversed does not lose their coming turn — it is simply delayed by one cycle.
 
@@ -110,6 +111,8 @@
 
 - **Chaos Phase**: At the very start of each turn (before the active player does anything), the top card of the Chaos Deck is flipped and its effect is immediately applied to the board for the entirety of that turn only, unless the effect explicitly says it persists.
 
+- **Restrictions**: The Defensive class does not have effect on this mode since the Defense Zone already does this.
+
 - **Chaos Effects (what can appear in the deck)**:
   - *Earthquake*: All minions on both sides lose 2 health. Cards that reach zero are destroyed.
   - *Mass Confusion*: All minions swap to the opponent's side until end of turn, then return.
@@ -117,7 +120,7 @@
   - *Surge*: All minions gain +2 attack until end of turn.
   - *Silence*: All special abilities are suppressed for this turn; cards act as vanilla stat blocks.
   - *Second Wind*: Both players restore mana to full capacity.
-  - *The Cull*: The minion with the lowest health on each side is immediately destroyed. If there are multiple minions with the same lowest health value of all of the minions, a random one with that lowest value is destroyed.
+  - *The Cull*: The minion with the lowest health on each side is immediately destroyed.
   - *Mirror*: Both players draw two cards but must give one random card from their hand to the opponent.
   - *Void Rift*: The Master Cards of both players swap health values temporarily for this turn only, reversed at turn end.
 
@@ -129,13 +132,15 @@
 
 - **Setup**: There are no Hero Cards in Ritual. Each player instead has a **Soul Vessel** — a glowing artifact displayed on their side of the board with 20 health, representing their life force. The Soul Vessel cannot attack, cannot be targeted by regular minion attacks, and does not count as a card for any game mechanic. The only ways to damage a Soul Vessel are through Ritual Spells and through card abilities that explicitly name the opponent or "any target". Players build their board with minions as usual and start at 1 mana. The Altar begins with 3 pre-loaded Ritual Energy for each player, representing the ambient magic of the ritual ground.
 
+- **Board Card Limit**: Maximum of 8 cards as minions.
+
 - **Sacrificing**: Instead of playing a card onto the board normally, a player may place it on the Altar as a sacrifice. A sacrificed card is permanently removed from the game (not sent to the Graveyard). The Ritual Energy gained equals the card's mana cost. Cards with a mana cost of 0 cannot be sacrificed.
 
 - **Unleashing a Ritual**: When a player's Ritual Energy bar reaches a set threshold, they may choose to spend the energy during their turn (before or after other actions) to cast a **Spell**. Each player can only cast one Ritual Spell per turn. Spending energy does not require a mana cost — it is paid entirely from the accumulated Ritual Energy. Energy thresholds and spells:
-  - **Minor Ritual (5 energy)** — *Bloodbind*: Restore your Soul Vessel's health by 6. | *Ashen Strike*: Deal 4 damage to any target (including the enemy Soul Vessel).
-  - **Moderate Ritual (12 energy)** — *Soul Harvest*: Draw 3 cards. | *Purge*: Destroy any one enemy minion outright. | *Rebirth*: Ressurect one random defeated card from the Graveyard back to the board.
-  - **Major Ritual (22 energy)** — *Dark Convergence*: Deal 3 damage to all enemy minions and the opponent's Soul Vessel. | *Summon from the Deep*: Summon a random Rare card from outside the game onto your side of the board.
-  - **Grand Ritual (35 energy)** — *Annihilation*: Destroy all minions on the board. | *Mass Necromancy*: Resurrect all your destroyed minions as 1/1 copies (stats reset, abilities kept).
+  - **Minor Ritual (8 energy)** — *Bloodbind*: Restore your Soul Vessel's health by 6. | *Ashen Strike*: Deal 4 damage to any target (including the enemy Soul Vessel).
+  - **Moderate Ritual (16 energy)** — *Soul Harvest*: Draw 3 cards. | *Purge*: Destroy any one enemy minion outright. | *Rebirth*: Ressurect one random defeated card from the Graveyard back to the board.
+  - **Major Ritual (24 energy)** — *Dark Convergence*: Deal 3 damage to all enemy minions and the opponent's Soul Vessel. | *Summon from the Deep*: Summon a random Rare card from outside the game onto your side of the board.
+  - **Grand Ritual (32 energy)** — *Annihilation*: Destroy all minions on the board. | *Necromancy Curse*: Resurrect all your destroyed minions as 1/1 copies (stats reset, abilities kept).
 
 - **Strategic tension**: Sacrificing a strong card gives more energy but removes a board presence that could have been used to fight. Sacrificing weak or useless cards is slower but preserves board state. Because the Soul Vessel is immune to minion attacks, the only path to victory runs through the Altar.
 
@@ -144,6 +149,8 @@
 ## Dungeon Run
 
 - **Setup**: The player selects a starting deck of 15 cards (smaller than a standard deck, to represent the early frailty of the run) and chooses one of them as their Hero Card before entering. A **Dungeon** is then selected — each Dungeon is a named themed location with 7 floors (e.g. *The Ashen Crypt*, *The Stormspire Peaks*, *The Fungal Labyrinth*). Each floor has a pre-built AI deck with a specific identity and strategy. The AI opponents also have Hero Cards and play by standard rules.
+
+- **Board Card Limit**: Same as Classic: maximum of 7 cards.
 
 - **Between Floors**: After defeating an AI opponent, the player is presented with three **Draft Rewards** — random cards drawn from a pool appropriate to the dungeon's theme. The player picks one to permanently add to their run deck. This is the only way to grow the deck during a run. The player may also swap their Hero Card to any card currently in their run deck between floors.
 

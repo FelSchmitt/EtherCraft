@@ -4,7 +4,7 @@
 
 - Classes: Spectral, Underworld
 
-- Stats: 6 Health; 5 attack Damage; 
+- Stats: 5 Health; 4 attack Damage; 4 mana cost
 
 - Ability: **Haunting Presence** — When this card is played, all enemy minions lose 1 attack until the start of your next turn. (The card embodies a dread aura that weakens the will to fight.)
 
@@ -51,3 +51,21 @@
 - Classes: Verdant, Guardian
 
 - Ability: None. (A sturdy defensive minion with above-average health for its mana cost but below-average attack — a pure wall card for early board control.)
+
+<br />
+<br />
+<br />
+
+<h1 align="center">Ideas of Classes</h1>
+
+## Defensive
+
+- This class makes cards act as a blocking shield, as described in the main documentation.
+
+## Underworld
+
+- Makes cards receive 1.5x more damage (values are rounded in game) from the **Divine** class, and deals 1.5x more damage to it.
+
+## Divine
+
+- Receive and deals 1.5x more damage to the **Underworld** class.

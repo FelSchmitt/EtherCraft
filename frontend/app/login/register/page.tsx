@@ -6,10 +6,6 @@ export default function RegisterPage() {
   async function sendData(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    const accountIdField = document.getElementById('account-id') as HTMLDivElement
-    const passwordField = document.getElementById('password') as HTMLDivElement
-    const nicknameField = document.getElementById('user-nickname') as HTMLDivElement
-
     const data = new FormData(event.currentTarget)
 
     const request = await fetch('http://localhost:3001/login/validatefields/newaccount', {
@@ -39,7 +35,6 @@ export default function RegisterPage() {
         'This password is too long. Must be 10 to 45 characters'
       ],
       [
-        'This player name alreadt exists. Choose another',
         'This player name is too short. Must be 5 to 30 characters',
         'This player name is too long. Must be 5 to 30 characters'
       ]

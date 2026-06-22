@@ -25,7 +25,7 @@ export default function GameScreen() {
 
 
         const scene = new three.Scene()
-        const camera = new three.PerspectiveCamera(75, gameScreen.width / gameScreen.height, 1, 100)
+        const camera = new three.PerspectiveCamera(75, gameScreen.width / gameScreen.height, 1, 300)
         const cameraControl = new OrbitControls(camera, renderer.domElement)
         const raycaster = new three.Raycaster()
         const loader = new GLTFLoader()
