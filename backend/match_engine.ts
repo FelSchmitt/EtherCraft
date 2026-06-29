@@ -2,7 +2,7 @@ import { MatchObject, MatchPlayer, MoveRequest, GameCard, ChaosEffectName } from
 import { triggerAbilities, AbilityEvent } from './abilities'
 import { validateAction } from './game_modes_rules'
 
-// ─── Result type ──────────────────────────────────────────────────────────────
+//  Result type
 
 export type ActionResult = {
     ok: boolean
@@ -12,7 +12,7 @@ export type ActionResult = {
 
 export type ActionEvent = { type: string; [key: string]: unknown }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+//  Helpers
 
 export function getOpponent(match: MatchObject, player: MatchPlayer): MatchPlayer {
     return match.players.find(p => p.id !== player.id)!
@@ -38,7 +38,7 @@ function removeDeadCards(player: MatchPlayer): ActionEvent[] {
     return events
 }
 
-// ─── Win condition ────────────────────────────────────────────────────────────
+//  Win condition
 
 export function checkWinCondition(match: MatchObject): string | null {
     const [p0, p1] = match.players
@@ -76,7 +76,7 @@ export function checkWinCondition(match: MatchObject): string | null {
     return null
 }
 
-// ─── Chaos deck ───────────────────────────────────────────────────────────────
+//  Chaos deck
 
 const ALL_CHAOS_EFFECTS: ChaosEffectName[] = [
     'earthquake', 'mass_confusion', 'blood_moon', 'surge', 'silence',
@@ -246,17 +246,17 @@ function revertChaosTemporaryEffects(match: MatchObject): void {
     match.void_rift_active = false
 }
 
-// ─── Turn transition ──────────────────────────────────────────────────────────
+//  Turn transition
 
 export function endTurnAndStartNext(match: MatchObject): ActionEvent[] {
     const events: ActionEvent[] = []
     const prevIdx = match.current_turn_player
     let nextIdx: 0 | 1 = prevIdx === 0 ? 1 : 0
 
-    // ── Chaos: revert temporaries from the turn that just ended ──────────────
+    //  Chaos: revert temporaries from the turn that just ended 
     if (match.mode === 'chaos') revertChaosTemporaryEffects(match)
 
-    // ── Eclipse timer ─────────────────────────────────────────────────────────
+    //  Eclipse timer 
     if (match.mode === 'eclipse' && !match.eclipse_active) {
         match.eclipse_timer = (match.eclipse_timer ?? 12) - 1
         events.push({ type: 'eclipse_timer_tick', timer: match.eclipse_timer })
@@ -278,7 +278,7 @@ export function endTurnAndStartNext(match: MatchObject): ActionEvent[] {
         }
     }
 
-    // ── Destiny: Reversal Coin every third turn ────────────────────────────────
+    //  Destiny: Reversal Coin every third turn
     if (match.mode === 'destiny') {
         match.reversal_coin_counter = ((match.reversal_coin_counter ?? 0) + 1) % 3
         if (match.reversal_coin_counter === 0 && Math.random() < 0.5) {
@@ -293,7 +293,7 @@ export function endTurnAndStartNext(match: MatchObject): ActionEvent[] {
     match.current_turn_player = nextIdx
     const nextPlayer = match.players[nextIdx]
 
-    // ── Mana restore ──────────────────────────────────────────────────────────
+    //  Mana restore
     if (match.mode === 'eclipse' && match.eclipse_active && match.mana_cap_at_eclipse !== undefined) {
         nextPlayer.mana_capacity = match.mana_cap_at_eclipse
     } else {
@@ -302,12 +302,12 @@ export function endTurnAndStartNext(match: MatchObject): ActionEvent[] {
     nextPlayer.mana_level = nextPlayer.mana_capacity
     events.push({ type: 'mana_restored', player_id: nextPlayer.id, mana_level: nextPlayer.mana_level, mana_capacity: nextPlayer.mana_capacity })
 
-    // ── Lift summoning sickness ───────────────────────────────────────────────
+    //  Lift summoning sickness
     for (const card of [...nextPlayer.table_cards, ...(nextPlayer.defense_cards ?? []), ...(nextPlayer.master_cards ?? [])]) {
         card.can_attack = true
     }
 
-    // ── Colossal regen (passive ability: restore 2 hp per turn) ───────────────
+    //  Colossal regen (passive ability: restore 2 hp per turn)
     for (const card of nextPlayer.table_cards) {
         if (card.abilities?.some(a => a.name === 'colossal_regen')) {
             const healed = Math.min(card.max_life - card.life, 2)
@@ -316,7 +316,7 @@ export function endTurnAndStartNext(match: MatchObject): ActionEvent[] {
         }
     }
 
-    // ── Eclipse per-turn damage ───────────────────────────────────────────────
+    //  Eclipse per-turn damage
     if (match.mode === 'eclipse' && match.eclipse_active) {
         for (const p of match.players) {
             let dmg = 2
@@ -326,7 +326,7 @@ export function endTurnAndStartNext(match: MatchObject): ActionEvent[] {
         }
     }
 
-    // ── Destiny dice roll for the incoming turn ────────────────────────────────
+    //  Destiny dice roll for the incoming turn
     if (match.mode === 'destiny') {
         match.action_die = Math.ceil(Math.random() * 6)
         match.fate_die   = Math.ceil(Math.random() * 4)
@@ -344,7 +344,7 @@ export function endTurnAndStartNext(match: MatchObject): ActionEvent[] {
         }
     }
 
-    // ── Chaos: draw and apply effect for the incoming turn ────────────────────
+    //  Chaos: draw and apply effect for the incoming turn
     if (match.mode === 'chaos') {
         const drawn = drawFromChaosDeck(match)
         for (const effect of drawn) {
@@ -357,7 +357,7 @@ export function endTurnAndStartNext(match: MatchObject): ActionEvent[] {
     return events
 }
 
-// ─── Action executors ─────────────────────────────────────────────────────────
+//  Action executors
 
 function executeThrowOntoTable(match: MatchObject, player: MatchPlayer, request: MoveRequest): ActionResult {
     const opponent = getOpponent(match, player)
@@ -572,7 +572,7 @@ function executeChooseHeroCard(match: MatchObject, player: MatchPlayer, request:
     }
 }
 
-// ─── Main dispatch ────────────────────────────────────────────────────────────
+//  Main dispatch
 
 export function executeAction(
     match: MatchObject,
@@ -620,7 +620,7 @@ export function executeAction(
     return result
 }
 
-// ─── Match state projection (what each player is allowed to see) ──────────────
+// Match state projection (what each player is allowed to see)
 
 export function buildPlayerView(match: MatchObject, viewerPlayerId: string) {
     const viewer   = match.players.find(p => p.id === viewerPlayerId)!

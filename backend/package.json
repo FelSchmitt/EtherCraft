@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "argon2": "^0.44.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
@@ -10,6 +11,7 @@
     "socket.io": "^4.8.3"
   },
   "devDependencies": {
+    "@types/argon2": "^0.14.1",
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",

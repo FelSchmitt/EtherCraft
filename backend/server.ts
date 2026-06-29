@@ -7,6 +7,7 @@ import { Server, Socket } from 'socket.io'
 import { createClient } from 'redis'
 import dotenv from 'dotenv'
 import { Pool } from 'pg'
+const argon2 = require('argon2')
 dotenv.config()
 
 import { playerIdentifiers, MatchObject, MoveRequest, GameMode } from './types'
@@ -60,19 +61,24 @@ expressServer.post('/login/validatefields/newaccount', async (req: Request, res:
 
         if (req.body.user_nickname.length > 30) messages.push({ code: [2, 2], message: 'nickname too long. must be 5-30 characters' })
 
-        if (messages.length > 0) return void res.status(422).send({ messages })
+        if (messages.length > 0) {
+            res.status(422).send({ messages: messages })
+        }
+        else {
+            const hash = await argon2.hash(req.body.password)
 
-        await pool.query(
-            `insert into users (account_id, password_hash, access_token, nickname, register_date) values ($1, $2, $3, $4, $5)`,
-            [
-                req.body.account_id,
-                req.body.password,
-                `${Date.now()}_${Math.round(Math.random() * 10000)}_${['token','net','config','random'][Math.round(Math.random() * 3)]}`,
-                req.body.user_nickname,
-                req.body.register_date,
-            ]
-        )
-        res.send({ message: 'account successfully created' })
+            await pool.query(
+                `insert into users (account_id, password_hash, access_token, nickname, register_date) values ($1, $2, $3, $4, $5)`,
+                [
+                    req.body.account_id,
+                    hash,
+                    `${Date.now()}_${Math.round(Math.random() * 10000)}_${['token', 'net', 'config', 'random'][Math.round(Math.random() * 3)]}`,
+                    req.body.user_nickname,
+                    req.body.register_date,
+                ]
+            )
+            res.status(201).send({ message: 'account successfully created' })
+        }
     }
     catch (error) {
         res.status(500).send({ serverError: error })
@@ -87,16 +93,22 @@ expressServer.post('/login/validatefields', async (req: Request, res: Response) 
         const messages: { code: number, message: string }[] = []
         const query = await pool.query(`select * from users where account_id = $1`, [req.body.account_id])
 
-        if (query.rowCount === 0) {
-            messages.push({ code: 0, message: 'account id not found. check if it was written correctly' })
+        if (query.rows.length === 0) {
+            messages.push({ code: 0, message: 'user not found. check if it was written correctly' })
         }
-        else if (req.body.password !== query.rows[0].password_hash) {
+
+        const passwordIsCorrect = await argon2.verify(query.rows[0].password_hash, req.body.password)
+
+        if (!passwordIsCorrect) {
             messages.push({ code: 1, message: 'password incorrect. check if it was written correctly' })
         }
 
-        if (messages.length > 0) return void res.status(422).send({ messages })
+        if (messages.length > 0) {
+            res.status(422).send({ messages })
+            return
+        }
 
-        const token = jwt.sign({ access_token: query.rows[0].access_token }, process.env.SECRET_KEY as string)
+        const token = jwt.sign({ access_token: query.rows[0].access_token }, process.env.SECRET_KEY as string, {expiresIn: '10m'})
 
         const cardIds = query.rows[0].account_cards ?? []
         const deckIds = query.rows[0].account_decks ?? []
@@ -109,11 +121,11 @@ expressServer.post('/login/validatefields', async (req: Request, res: Response) 
             : { rows: [] }
 
         res.send({
-            account_id:    query.rows[0].account_id,
+            account_id: query.rows[0].account_id,
             user_nickname: query.rows[0].nickname,
-            cards:         cardsQuery.rows,
-            decks:         decksQuery.rows,
-            access:        token,
+            cards: cardsQuery.rows,
+            decks: decksQuery.rows,
+            access: token,
         })
     } catch (error) {
         res.status(500).send({ serverError: error })
@@ -123,7 +135,7 @@ expressServer.post('/login/validatefields', async (req: Request, res: Response) 
 
 
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// Helpers
 
 async function generateCardUuid(): Promise<string> {
     return `${await redisClient.DBSIZE()}-${Date.now() + Math.round(Math.random() * 1_000_000)}-${Math.round(Math.random() * 100)}`
@@ -156,46 +168,46 @@ function buildMatchState(
     const startMana = mode === 'destiny' ? 2 : 1
 
     const players = playersIds.map((p, i) => ({
-        id:            p.id,
-        socketId:      p.socketId,
-        nickname:      p.nickname ?? p.id,
-        hand_cards:    handCards[i],
-        table_cards:   [] as MatchObject['players'][0]['table_cards'],
-        mana_level:    startMana,
+        id: p.id,
+        socketId: p.socketId,
+        nickname: p.nickname ?? p.id,
+        hand_cards: handCards[i],
+        table_cards: [] as MatchObject['players'][0]['table_cards'],
+        mana_level: startMana,
         mana_capacity: startMana,
         // Mode-specific life targets
-        ...(mode === 'ritual'  ? { soul_vessel_life: 20, ritual_energy: 3 } : {}),
+        ...(mode === 'ritual' ? { soul_vessel_life: 20, ritual_energy: 3 } : {}),
         ...(mode === 'eclipse' ? { life_pool: 30 } : {}),
-        ...(mode === 'chaos'   ? { master_cards: [] as any[], defense_cards: [] as any[] } : {}),
+        ...(mode === 'chaos' ? { master_cards: [] as any[], defense_cards: [] as any[] } : {}),
     }))
 
     const base: MatchObject = {
-        match_id:             matchId,
+        match_id: matchId,
         mode,
-        players:              players as MatchObject['players'],
-        current_turn_player:  Math.round(Math.random()) as 0 | 1,
-        start_time:           new Date().toISOString(),
-        total_turns_count:    0,
+        players: players as MatchObject['players'],
+        current_turn_player: Math.round(Math.random()) as 0 | 1,
+        start_time: new Date().toISOString(),
+        total_turns_count: 0,
     }
 
     if (mode === 'eclipse') {
-        base.eclipse_timer  = 12
+        base.eclipse_timer = 12
         base.eclipse_active = false
         base.eclipse_reset_count = 0
     }
 
     if (mode === 'chaos') {
-        base.chaos_deck               = []   // filled on first draw
+        base.chaos_deck = []   // filled on first draw
         base.chaos_deck_exhausted_count = 0
-        base.chaos_draws_per_turn     = 1
-        base.current_chaos_effect     = null
+        base.chaos_draws_per_turn = 1
+        base.current_chaos_effect = null
     }
 
     if (mode === 'destiny') {
-        base.action_die            = null
-        base.fate_die              = null
+        base.action_die = null
+        base.fate_die = null
         base.favorable_rolls_streak = 0
-        base.mercy_roll_used       = false
+        base.mercy_roll_used = false
         base.reversal_coin_counter = 0
     }
 
@@ -233,9 +245,9 @@ socketServer.on('connection', (client: Socket) => {
             const uuids = await Promise.all(Array.from({ length: 6 }, () => generateCardUuid()))
 
             const starterCards = [
-                { card_id: 'giant_serpent',  name: 'Giant Serpent', mana_cost: 1, life: 5, max_life: 5, attack_damage: 3, can_attack: false, classes: ['beast'],    abilities: [], rarity: 'common' },
-                { card_id: 'wendigo',        name: 'Wendigo',       mana_cost: 1, life: 4, max_life: 4, attack_damage: 2, can_attack: false, classes: ['undead'],   abilities: [], rarity: 'common' },
-                { card_id: 'shadow_demon',   name: 'Shadow Demon',  mana_cost: 2, life: 5, max_life: 5, attack_damage: 3, can_attack: false, classes: ['shadow'],   abilities: [], rarity: 'uncommon' },
+                { card_id: 'giant_serpent', name: 'Giant Serpent', mana_cost: 1, life: 5, max_life: 5, attack_damage: 3, can_attack: false, classes: ['beast'], abilities: [], rarity: 'common' },
+                { card_id: 'wendigo', name: 'Wendigo', mana_cost: 1, life: 4, max_life: 4, attack_damage: 2, can_attack: false, classes: ['undead'], abilities: [], rarity: 'common' },
+                { card_id: 'shadow_demon', name: 'Shadow Demon', mana_cost: 2, life: 5, max_life: 5, attack_damage: 3, can_attack: false, classes: ['shadow'], abilities: [], rarity: 'uncommon' },
             ]
 
             const handCards = playersIds.map((_, pi) =>
@@ -252,28 +264,28 @@ socketServer.on('connection', (client: Socket) => {
 
             // Notify both players: use the existing build_match format for the 3D scene
             for (let i = 0; i < 2; i++) {
-                const me  = match.players[i]
+                const me = match.players[i]
                 const opp = match.players[i === 0 ? 1 : 0]
 
                 socketServer.to(me.socketId).emit('build_match', {
-                    hand_cards:  me.hand_cards,
+                    hand_cards: me.hand_cards,
                     table_cards: null,
-                    life:        30,
-                    mana_level:  me.mana_level,
+                    life: 30,
+                    mana_level: me.mana_level,
                     opponent: {
-                        hand_cards:  opp.hand_cards.length,
+                        hand_cards: opp.hand_cards.length,
                         table_cards: null,
-                        id:          opp.id,
-                        nickname:    opp.nickname,
-                        life:        30,
-                        mana_level:  opp.mana_level,
+                        id: opp.id,
+                        nickname: opp.nickname,
+                        life: 30,
+                        mana_level: opp.mana_level,
                     },
                 })
 
                 socketServer.to(me.socketId).emit('chat', {
                     sender: 'Server',
-                    color:  '#ffee00',
-                    text:   `You joined match ${matchId} against ${opp.nickname} (mode: ${mode})`,
+                    color: '#ffee00',
+                    text: `You joined match ${matchId} against ${opp.nickname} (mode: ${mode})`,
                 })
             }
 
@@ -313,16 +325,16 @@ socketServer.on('connection', (client: Socket) => {
                 const playedCard = [...player.table_cards, ...(player.defense_cards ?? [])].find(c => c.uuid === request.card!.uuid)
 
                 client.emit('card_update', {
-                    uuid:  request.card.uuid,
-                    id:    request.card.uuid,
+                    uuid: request.card.uuid,
+                    id: request.card.uuid,
                     place: 'table',
-                    side:  'self',
+                    side: 'self',
                 })
                 socketServer.to(opponent.socketId).emit('card_update', {
-                    uuid:  undefined,
-                    id:    playedCard?.card_id,
+                    uuid: undefined,
+                    id: playedCard?.card_id,
                     place: 'table',
-                    side:  'opponent',
+                    side: 'opponent',
                 })
             }
 

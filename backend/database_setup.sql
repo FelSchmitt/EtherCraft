@@ -19,7 +19,7 @@ CREATE TABLE game_cards (
 
 CREATE TABLE users (
   account_id       varchar(20)  PRIMARY KEY,
-  password_hash    varchar(100) NOT NULL,
+  password_hash    text NOT NULL,
   access_token     varchar(40)  NOT NULL,
   nickname         varchar(20)  NOT NULL,
   register_date    date         NOT NULL,

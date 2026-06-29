@@ -204,11 +204,7 @@ const rules: Partial<Record<`${GameMode}:${MoveAction}`, Validator[]>> = {
 
 // Public API
 
-export function validateAction(
-    match: MatchObject,
-    player: MatchPlayer,
-    request: MoveRequest
-): ValidationResult {
+export function validateAction(match: MatchObject, player: MatchPlayer, request: MoveRequest): ValidationResult {
     const key = `${match.mode}:${request.action}` as `${GameMode}:${MoveAction}`
     const validators = rules[key]
 
