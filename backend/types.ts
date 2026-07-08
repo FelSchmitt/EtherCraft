@@ -111,9 +111,5 @@ export type MoveRequest = {
 export type playerIdentifiers = {
     id: string
     socketId: string
-    nickname?: string
+    nickname: string
 }
-
-export type matchObject = MatchObject
-export type matchPlayer = MatchPlayer
-export type moveRequestType = MoveRequest

@@ -89,7 +89,7 @@
 
 ## Destiny
 
-- **Setup**: Neither player chooses their Hero Card. Instead, the match opens with the **Rite of Fate** — the Judge draws 3 cards at random from each player's shuffled deck and lays them face-up in a row. Each player simultaneously points to one of their three revealed cards; that card becomes their Hero Card. The other two are returned to their deck. Because neither player can fully control this moment, both start at 2 mana instead of 1 — the Judge's boon for surrendering choice to fate. The Judge then takes its position at the left edge of the board.
+- **Setup**: Neither player chooses their Hero Card. Instead, the match opens with the **Rite of Fate** — the Judge draws 3 cards at random from each player's shuffled deck and lays them face-up in a row. Each player simultaneously points to one of their three revealed cards; that card becomes their Hero Card. The other two are returned to their deck. Because neither player can fully control this moment, both start at 2 mana instead of 1 — the Judge's boon for surrendering choice to fate.
 
 - **Board Card Limit**: Board minions limited to 7 cards — same as Classic.
 

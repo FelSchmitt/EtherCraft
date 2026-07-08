@@ -623,8 +623,8 @@ export function executeAction(
 // Match state projection (what each player is allowed to see)
 
 export function buildPlayerView(match: MatchObject, viewerPlayerId: string) {
-    const viewer   = match.players.find(p => p.id === viewerPlayerId)!
-    const opponent = match.players.find(p => p.id !== viewerPlayerId)!
+    const viewer = match.players.find(p => p.id === viewerPlayerId)
+    const opponent = match.players.find(p => p.id !== viewerPlayerId)
 
     return {
         match_id:             match.match_id,

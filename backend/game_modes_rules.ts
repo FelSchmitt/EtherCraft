@@ -1,14 +1,14 @@
 import { MatchObject, MatchPlayer, MoveRequest, GameMode, MoveAction } from './types'
 
-// Types
-
-type ValidationResult = { ok: true } | { ok: false; message: string }
+type ValidationResult = { ok: true } | { ok: false, message: string }
 type Validator = (match: MatchObject, player: MatchPlayer, request: MoveRequest) => ValidationResult
+
+
 
 const pass: ValidationResult = { ok: true }
 const fail = (message: string): ValidationResult => ({ ok: false, message })
 
-// Reusable validators
+
 
 const isTurn: Validator = (match, player) => match.players[match.current_turn_player].id === player.id ? pass : fail("It's not your turn")
 
@@ -152,10 +152,8 @@ const cardInHandForHeroSelection: Validator = (match, player, request) => {
         : fail('Card not found in your hand')
 }
 
-// Ruleset table
 
-// Keyed as "<mode>:<action>". Adding support for a new mode or action only
-// requires a new entry here — no other file needs to change.
+
 const rules: Partial<Record<`${GameMode}:${MoveAction}`, Validator[]>> = {
     // Classic
     'classic:throw_onto_table':  [isTurn, cardInHand, hasMana, boardLimit(7)],
@@ -202,15 +200,13 @@ const rules: Partial<Record<`${GameMode}:${MoveAction}`, Validator[]>> = {
     'eclipse:end_turn':          [isTurn],
 }
 
-// Public API
+
 
 export function validateAction(match: MatchObject, player: MatchPlayer, request: MoveRequest): ValidationResult {
     const key = `${match.mode}:${request.action}` as `${GameMode}:${MoveAction}`
     const validators = rules[key]
 
-    if (!validators) {
-        return fail(`Action "${request.action}" is not valid in mode "${match.mode}"`)
-    }
+    if (!validators) return fail(`Action "${request.action}" is not valid in mode "${match.mode}"`)
 
     for (const validator of validators) {
         const result = validator(match, player, request)
@@ -219,6 +215,3 @@ export function validateAction(match: MatchObject, player: MatchPlayer, request:
 
     return pass
 }
-
-// Kept for backward compat — server.ts previously imported this symbol.
-export const moveRulesList = rules

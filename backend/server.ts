@@ -4,7 +4,7 @@ import cors from 'cors'
 import cookieParser from 'cookie-parser'
 import jwt from 'jsonwebtoken'
 import { Server, Socket } from 'socket.io'
-import { createClient } from 'redis'
+import { createClient, SCHEMA_FIELD_TYPE, FT_AGGREGATE_GROUP_BY_REDUCERS, FT_AGGREGATE_STEPS } from 'redis'
 import dotenv from 'dotenv'
 import { Pool } from 'pg'
 const argon2 = require('argon2')
@@ -30,7 +30,7 @@ export const pool = new Pool({
 const expressServer = express()
 const server = http.createServer(expressServer)
 const socketServer = new Server(server, { cors: corsConfig })
-export const redisClient = createClient()
+const redisClient = createClient()
 
 const opponentsQueue: playerIdentifiers[] = []
 
@@ -108,7 +108,7 @@ expressServer.post('/login/validatefields', async (req: Request, res: Response) 
             return
         }
 
-        const token = jwt.sign({ access_token: query.rows[0].access_token }, process.env.SECRET_KEY as string, {expiresIn: '10m'})
+        const token = jwt.sign({ access_token: query.rows[0].access_token }, process.env.SECRET_KEY as string, { expiresIn: '10m' })
 
         const cardIds = query.rows[0].account_cards ?? []
         const deckIds = query.rows[0].account_decks ?? []
@@ -138,18 +138,17 @@ expressServer.post('/login/validatefields', async (req: Request, res: Response) 
 // Helpers
 
 async function generateCardUuid(): Promise<string> {
-    return `${await redisClient.DBSIZE()}-${Date.now() + Math.round(Math.random() * 1_000_000)}-${Math.round(Math.random() * 100)}`
+    return `${await redisClient.DBSIZE()}_${Date.now() + Math.round(Math.random() * 1_000_000)}_${Math.round(Math.random() * 100)}`
 }
 
-async function getMatchForSocket(socketId: string): Promise<MatchObject | null> {
-    const matchId = await redisClient.get(`socket_match:${socketId}`)
-    if (!matchId) return null
-    const data = await redisClient.json.get(matchId)
-    return data ? (data as MatchObject) : null
+async function getMatchFromSocketId(socketId: string): Promise<MatchObject | null> {
+    const result: any = await redisClient.ft.search('index:matches', `@sockets_ids:{${socketId}}`)
+    if (result.total === 0) return null
+    return result.documents[0].value as MatchObject
 }
 
 async function saveMatch(match: MatchObject): Promise<void> {
-    await redisClient.json.set(match.match_id, '$', match as any)
+    await redisClient.json.set(match.match_id, '$', match)
 }
 
 function broadcastMatchState(match: MatchObject): void {
@@ -158,24 +157,21 @@ function broadcastMatchState(match: MatchObject): void {
     }
 }
 
-// Build the initial MatchObject for a given mode.
-function buildMatchState(
+function createMatch(
     mode: GameMode,
     playersIds: playerIdentifiers[],
     handCards: MatchObject['players'][0]['hand_cards'][],
-    matchId: string
-): MatchObject {
+    matchId: string): MatchObject {
     const startMana = mode === 'destiny' ? 2 : 1
 
-    const players = playersIds.map((p, i) => ({
-        id: p.id,
-        socketId: p.socketId,
-        nickname: p.nickname ?? p.id,
-        hand_cards: handCards[i],
-        table_cards: [] as MatchObject['players'][0]['table_cards'],
+    const players = playersIds.map((player, index) => ({
+        id: player.id,
+        socketId: player.socketId,
+        nickname: player.nickname,
+        hand_cards: handCards[index],
+        table_cards: [],
         mana_level: startMana,
         mana_capacity: startMana,
-        // Mode-specific life targets
         ...(mode === 'ritual' ? { soul_vessel_life: 20, ritual_energy: 3 } : {}),
         ...(mode === 'eclipse' ? { life_pool: 30 } : {}),
         ...(mode === 'chaos' ? { master_cards: [] as any[], defense_cards: [] as any[] } : {}),
@@ -184,7 +180,7 @@ function buildMatchState(
     const base: MatchObject = {
         match_id: matchId,
         mode,
-        players: players as MatchObject['players'],
+        players: players,
         current_turn_player: Math.round(Math.random()) as 0 | 1,
         start_time: new Date().toISOString(),
         total_turns_count: 0,
@@ -197,7 +193,7 @@ function buildMatchState(
     }
 
     if (mode === 'chaos') {
-        base.chaos_deck = []   // filled on first draw
+        base.chaos_deck = []
         base.chaos_deck_exhausted_count = 0
         base.chaos_draws_per_turn = 1
         base.current_chaos_effect = null
@@ -216,17 +212,14 @@ function buildMatchState(
 
 
 
-// ─── Socket events ────────────────────────────────────────────────────────────
-
 socketServer.on('connection', (client: Socket) => {
     console.log(`client ${client.id} connected`)
 
-    client.on('disconnect', async () => {
+    client.on('disconnect', () => {
         console.log(`client ${client.id} disconnected`)
-        await redisClient.del(`socket_match:${client.id}`)
     })
 
-    client.on('chat', (message: { sender: string; text: string }) => {
+    client.on('chat', (message: { sender: string, text: string }) => {
         console.log(`Message from frontend: ${message.text}`)
         socketServer.emit('chat', { sender: message.sender, color: '#1cbe00', text: message.text })
     })
@@ -238,10 +231,9 @@ socketServer.on('connection', (client: Socket) => {
         opponentsQueue.push({ id: identifiers.id, socketId: client.id, nickname: identifiers.nickname })
 
         if (opponentsQueue.length >= 2) {
-            const playersIds = [opponentsQueue.shift()!, opponentsQueue.shift()!]
-            const matchId = `match:${Date.now()}-${Math.round(Math.random() * 100)}`
+            const playersIds = [opponentsQueue.shift(), opponentsQueue.shift()]
+            const matchId = `match:${Date.now()}_${Math.round(Math.random() * 100)}`
 
-            // Placeholder hand cards — replace with real deck queries once deck management is wired
             const uuids = await Promise.all(Array.from({ length: 6 }, () => generateCardUuid()))
 
             const starterCards = [
@@ -250,31 +242,28 @@ socketServer.on('connection', (client: Socket) => {
                 { card_id: 'shadow_demon', name: 'Shadow Demon', mana_cost: 2, life: 5, max_life: 5, attack_damage: 3, can_attack: false, classes: ['shadow'], abilities: [], rarity: 'uncommon' },
             ]
 
-            const handCards = playersIds.map((_, pi) =>
-                starterCards.map((card, ci) => ({ ...card, player: playersIds[pi].id, uuid: uuids[pi * 3 + ci] }))
+            const handCards = playersIds.map((player, index) =>
+                starterCards.map((card, index2) => ({ ...card, player: playersIds[index].id, uuid: uuids[index * 3 + index2] }))
             )
 
-            const match = buildMatchState(mode, playersIds, handCards, matchId)
+            const match = createMatch(mode, playersIds, handCards, matchId)
 
-            await redisClient.json.set(matchId, '$', match as any)
-            await redisClient.set(`socket_match:${playersIds[0].socketId}`, matchId)
-            await redisClient.set(`socket_match:${playersIds[1].socketId}`, matchId)
+            await redisClient.json.set(matchId, '$', match)
 
             socketServer.to([playersIds[0].socketId, playersIds[1].socketId]).socketsJoin(matchId)
 
-            // Notify both players: use the existing build_match format for the 3D scene
             for (let i = 0; i < 2; i++) {
                 const me = match.players[i]
                 const opp = match.players[i === 0 ? 1 : 0]
 
                 socketServer.to(me.socketId).emit('build_match', {
                     hand_cards: me.hand_cards,
-                    table_cards: null,
+                    table_cards: [],
                     life: 30,
                     mana_level: me.mana_level,
                     opponent: {
                         hand_cards: opp.hand_cards.length,
-                        table_cards: null,
+                        table_cards: [],
                         id: opp.id,
                         nickname: opp.nickname,
                         life: 30,
@@ -298,18 +287,13 @@ socketServer.on('connection', (client: Socket) => {
 
     client.on('move_request', async (request: MoveRequest) => {
         try {
-            const match = await getMatchForSocket(client.id)
+            const match = await getMatchFromSocketId(client.id)
             if (!match) {
                 client.emit('chat', { sender: 'Server', color: '#ff5500', text: 'You are not in a match' })
                 return
             }
 
-            const player = match.players.find(p => p.socketId === client.id)
-            if (!player) {
-                client.emit('chat', { sender: 'Server', color: '#ff5500', text: 'Player not found in match' })
-                return
-            }
-
+            const player = match.players.find(player => player.socketId === client.id)
             const result = executeAction(match, player, request)
 
             if (!result.ok) {
@@ -322,7 +306,7 @@ socketServer.on('connection', (client: Socket) => {
             // Update the 3D scene for card movement
             if (request.action === 'throw_onto_table' && request.card) {
                 const opponent = getOpponent(match, player)
-                const playedCard = [...player.table_cards, ...(player.defense_cards ?? [])].find(c => c.uuid === request.card!.uuid)
+                const playedCard = [...player.table_cards, ...(player.defense_cards ?? [])].find(c => c.uuid === request.card.uuid)
 
                 client.emit('card_update', {
                     uuid: request.card.uuid,
@@ -358,9 +342,9 @@ socketServer.on('connection', (client: Socket) => {
     })
 
     client.on('get_match', async () => {
-        const match = await getMatchForSocket(client.id)
+        const match = await getMatchFromSocketId(client.id)
         if (match) {
-            client.emit('match_data', buildPlayerView(match, match.players.find(p => p.socketId === client.id)!.id))
+            client.emit('match_data', buildPlayerView(match, match.players.find(p => p.socketId === client.id).id))
         }
     })
 })
@@ -368,20 +352,21 @@ socketServer.on('connection', (client: Socket) => {
 
 
 async function initServer(): Promise<void> {
-    redisClient.on('error', (error: Error) => console.error(`Redis error: ${error}`))
+    redisClient.on('error', (error: Error) => console.log(`Redis error: ${error}`))
     await redisClient.connect()
 
     try {
         await redisClient.ft.create(
             'index:matches',
-            { '$.players': { type: 'TAG', AS: 'players' } },
+            { '$.players[*].socketId': { type: 'TAG', AS: 'sockets_ids' } },
             { ON: 'JSON', PREFIX: 'match:' }
         )
-    } catch {
-        console.log('Redis search index already exists or could not be created')
+    }
+    catch (error) {
+        console.log(`an error occured or index already exists: ${error.message}`)
     }
 
     server.listen(3001, () => console.log('Backend server running on http://localhost:3001'))
 }
 
-initServer().catch(console.error)
+initServer()
