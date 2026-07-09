@@ -2,7 +2,7 @@ import { MatchObject, MatchPlayer, MoveRequest, GameCard, ChaosEffectName } from
 import { triggerAbilities, AbilityEvent } from './abilities'
 import { validateAction } from './game_modes_rules'
 
-//  Result type
+
 
 export type ActionResult = {
     ok: boolean
@@ -12,10 +12,10 @@ export type ActionResult = {
 
 export type ActionEvent = { type: string; [key: string]: unknown }
 
-//  Helpers
+
 
 export function getOpponent(match: MatchObject, player: MatchPlayer): MatchPlayer {
-    return match.players.find(p => p.id !== player.id)!
+    return match.players.find(p => p.id !== player.id)
 }
 
 function cardFromBoard(player: MatchPlayer, uuid: string): GameCard | undefined {
@@ -38,14 +38,13 @@ function removeDeadCards(player: MatchPlayer): ActionEvent[] {
     return events
 }
 
-//  Win condition
+
 
 export function checkWinCondition(match: MatchObject): string | null {
     const [p0, p1] = match.players
 
     switch (match.mode) {
         case 'classic':
-        case 'destiny':
         case 'dungeon_run':
             if (p0.hero_card && p0.hero_card.life <= 0) return p1.id
             if (p1.hero_card && p1.hero_card.life <= 0) return p0.id
@@ -57,7 +56,6 @@ export function checkWinCondition(match: MatchObject): string | null {
             break
 
         case 'chaos':
-            // Win by destroying ALL master cards; defense zone state is irrelevant
             if (!p0.master_cards || p0.master_cards.length === 0) return p1.id
             if (!p1.master_cards || p1.master_cards.length === 0) return p0.id
             break
@@ -76,7 +74,7 @@ export function checkWinCondition(match: MatchObject): string | null {
     return null
 }
 
-//  Chaos deck
+
 
 const ALL_CHAOS_EFFECTS: ChaosEffectName[] = [
     'earthquake', 'mass_confusion', 'blood_moon', 'surge', 'silence',
@@ -105,7 +103,7 @@ function drawFromChaosDeck(match: MatchObject): ChaosEffectName[] {
                 match.chaos_draws_per_turn = 2
             }
         }
-        drawn.push(match.chaos_deck.shift()!)
+        drawn.push(match.chaos_deck.shift())
     }
     return drawn
 }
@@ -114,7 +112,6 @@ function applyChaosEffect(effect: ChaosEffectName, match: MatchObject): ActionEv
     const [p0, p1] = match.players
     const events: ActionEvent[] = [{ type: 'chaos_effect', effect }]
 
-    // Reset previous temporaries
     match.blood_moon_active = false
     match.mass_confusion_active = false
     match.silence_active = false
@@ -172,7 +169,6 @@ function applyChaosEffect(effect: ChaosEffectName, match: MatchObject): ActionEv
             break
 
         case 'mirror':
-            // Each player gives one random hand card to the opponent
             for (const p of [p0, p1]) {
                 const opp = p.id === p0.id ? p1 : p0
                 if (p.hand_cards.length === 0) continue
@@ -183,7 +179,6 @@ function applyChaosEffect(effect: ChaosEffectName, match: MatchObject): ActionEv
 
         case 'void_rift': {
             match.void_rift_active = true
-            // Temporarily swap the players' life target values
             if (p0.hero_card && p1.hero_card) {
                 const tmp = p0.hero_card.life;
                 p0.hero_card.life = p1.hero_card.life;
@@ -361,7 +356,7 @@ export function endTurnAndStartNext(match: MatchObject): ActionEvent[] {
 
 function executeThrowOntoTable(match: MatchObject, player: MatchPlayer, request: MoveRequest): ActionResult {
     const opponent = getOpponent(match, player)
-    const card = player.hand_cards.find(c => c.uuid === request.card!.uuid)!
+    const card = player.hand_cards.find(c => c.uuid === request.card.uuid)
 
     player.hand_cards = player.hand_cards.filter(c => c.uuid !== card.uuid)
     card.can_attack = false

@@ -10,9 +10,9 @@ import { Pool } from 'pg'
 const argon2 = require('argon2')
 dotenv.config()
 
-import { playerIdentifiers, MatchObject, MoveRequest, GameMode } from './types'
+import { playerIdentifiers, MatchObject, MoveRequest, GameMode } from './match_handlers/types'
 import { verifyToken } from './middlewares'
-import { executeAction, buildPlayerView, endTurnAndStartNext, getOpponent } from './match_engine'
+import { executeAction, buildPlayerView, endTurnAndStartNext, getOpponent } from './match_handlers/match_engine'
 
 const corsConfig = { origin: 'http://localhost:3000', credentials: true }
 

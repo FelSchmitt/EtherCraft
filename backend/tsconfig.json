@@ -11,6 +11,6 @@
     "resolveJsonModule": true,
     "skipLibCheck": true
   },
-  "include": ["./*.ts"],
+  "include": ["./*.ts", "match_handlers/types.ts", "match_handlers/match_engine.ts", "match_handlers/abilities.ts"],
   "exclude": ["node_modules", "dist"]
 }
