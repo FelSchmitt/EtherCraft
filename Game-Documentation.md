@@ -9,7 +9,7 @@
 
 - Titanic and Colossal card types are the most appealing in the game, have huge health and attack damage by default. Titan Cards are inspired on elements and the forces of nature: oceans, winds, lightnings, volcanoes, tectonic plates, the sun, etc. On the other hand, Colossus Cards are biologically themed: Giant beasts of flesh and bones, tree trunks and vegetal matter that serve as organs, flesh in symbiosis with fungus colonies, etc. When receiving high damage from an enemy card, Titan Cards can split their health and force to create smaller ones (e.g. a legendary card, two epic cards or multiple common ones). Colossus Cards regenerate health in some situations. All titanic cards have the **Elemental** class.
 
-- A card can or not have a special ability. Most abilities activate when the card is thrown on the table, but some activate while it's still in the player's hand. Common and Uncommon cards have no abilities, but Rare types onward can have one, or even two if they are Legendary or higher rarity.
+- A card can or not have a special ability. Abilities can activate when drawn from the deck to the player's hand, when it's thrown on the table, damaged or the turn pass to the opponent, back to the player or after a certain amount of times. Common and Uncommon cards have no abilities, but Rare types onward can have one, or even two if they are Legendary or higher rarity.
 
 - Cards have also Classes, which make their interactions more dynamic. The classes of a card influence the damage dealt to cards of other specific classes, the damage received from certain classes, the special abilities of other cards and other mechanics. A card can have one or more classes regardless of its rarity.
 

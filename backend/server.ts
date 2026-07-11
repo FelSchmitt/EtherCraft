@@ -10,9 +10,9 @@ import { Pool } from 'pg'
 const argon2 = require('argon2')
 dotenv.config()
 
-import { playerIdentifiers, MatchObject, MoveRequest, GameMode } from './match_handlers/types'
+import { playerIdentifiers, MatchObject, MoveRequest, GameMode, GameCard } from './match_handlers/types'
 import { verifyToken } from './middlewares'
-import { executeAction, buildPlayerView, endTurnAndStartNext, getOpponent } from './match_handlers/match_engine'
+import { executeAction, buildPlayerView } from './match_handlers/match_engine'
 
 const corsConfig = { origin: 'http://localhost:3000', credentials: true }
 
@@ -147,7 +147,7 @@ async function getMatchFromSocketId(socketId: string): Promise<MatchObject | nul
     return result.documents[0].value as MatchObject
 }
 
-async function saveMatch(match: MatchObject): Promise<void> {
+async function updateMatch(match: MatchObject): Promise<void> {
     await redisClient.json.set(match.match_id, '$', match)
 }
 
@@ -184,6 +184,7 @@ function createMatch(
         current_turn_player: Math.round(Math.random()) as 0 | 1,
         start_time: new Date().toISOString(),
         total_turns_count: 0,
+        graveyard: []
     }
 
     if (mode === 'eclipse') {
@@ -237,9 +238,9 @@ socketServer.on('connection', (client: Socket) => {
             const uuids = await Promise.all(Array.from({ length: 6 }, () => generateCardUuid()))
 
             const starterCards = [
-                { card_id: 'giant_serpent', name: 'Giant Serpent', mana_cost: 1, life: 5, max_life: 5, attack_damage: 3, can_attack: false, classes: ['beast'], abilities: [], rarity: 'common' },
-                { card_id: 'wendigo', name: 'Wendigo', mana_cost: 1, life: 4, max_life: 4, attack_damage: 2, can_attack: false, classes: ['undead'], abilities: [], rarity: 'common' },
-                { card_id: 'shadow_demon', name: 'Shadow Demon', mana_cost: 2, life: 5, max_life: 5, attack_damage: 3, can_attack: false, classes: ['shadow'], abilities: [], rarity: 'uncommon' },
+                { card_id: 'giant_serpent', mana_cost: 1, life: 5, max_life: 5, attack_damage: 3, can_attack: false, classes: ['beast'], abilities: [], rarity: 'common' },
+                { card_id: 'wendigo', mana_cost: 1, life: 4, max_life: 4, attack_damage: 2, can_attack: false, classes: ['undead'], abilities: [], rarity: 'common' },
+                { card_id: 'shadow_demon', mana_cost: 2, life: 5, max_life: 5, attack_damage: 3, can_attack: false, classes: ['shadow'], abilities: [], rarity: 'uncommon' },
             ]
 
             const handCards = playersIds.map((player, index) =>
@@ -297,38 +298,19 @@ socketServer.on('connection', (client: Socket) => {
             const result = executeAction(match, player, request)
 
             if (!result.ok) {
-                client.emit('chat', { sender: 'Server', color: '#ffaa00', text: result.message ?? 'Move denied' })
+                client.emit('chat', { sender: 'Server', color: '#ffaa00', text: result.message })
                 return
             }
 
-            await saveMatch(match)
+            await updateMatch(match)
 
-            // Update the 3D scene for card movement
-            if (request.action === 'throw_onto_table' && request.card) {
-                const opponent = getOpponent(match, player)
-                const playedCard = [...player.table_cards, ...(player.defense_cards ?? [])].find(c => c.uuid === request.card.uuid)
-
-                client.emit('card_update', {
-                    uuid: request.card.uuid,
-                    id: request.card.uuid,
-                    place: 'table',
-                    side: 'self',
-                })
-                socketServer.to(opponent.socketId).emit('card_update', {
-                    uuid: undefined,
-                    id: playedCard?.card_id,
-                    place: 'table',
-                    side: 'opponent',
-                })
-            }
-
-            // Full state sync to both players
             broadcastMatchState(match)
 
             if (match.winner_id) {
                 socketServer.to(match.match_id).emit('match_over', { winner_id: match.winner_id })
             }
-        } catch (error) {
+        }
+        catch (error) {
             client.emit('chat', { sender: 'Server', color: '#ff5500', text: `Server error: ${error}` })
             console.error(error)
         }

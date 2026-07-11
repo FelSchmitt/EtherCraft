@@ -1,17 +1,14 @@
-// Card & Ability
-
-export type AbilityTrigger = 'on_play' | 'in_hand' | 'passive'
-
-export type CardAbility = {
-    name: string
-    trigger: AbilityTrigger
-    description: string
+export type playerIdentifiers = {
+    id: string
+    socketId: string
+    nickname: string
 }
+
+
 
 export type GameCard = {
     card_id: string
     uuid: string
-    name: string
     mana_cost: number
     life: number
     max_life: number
@@ -21,39 +18,35 @@ export type GameCard = {
     abilities: CardAbility[]
     rarity: string
     is_hero?: boolean
+    is_master?: boolean
+    is_defense?: boolean
+    owner_id?: string
 }
 
-// Players
+
 
 export type MatchPlayer = {
     id: string
     socketId: string
     nickname: string
     hand_cards: GameCard[]
-    // Classic / Destiny / Dungeon Run / Ritual: active minion zone
-    // Eclipse: active minion zone (no hero, attacks life_pool directly)
     table_cards: GameCard[]
-    // Chaos only: the cards auto-placed as victory targets
-    master_cards?: GameCard[]
-    // Chaos only: player-controlled minions in defense zone
-    defense_cards?: GameCard[]
-    // Classic / Destiny / Dungeon Run
-    hero_card?: GameCard
-    // Ritual
     soul_vessel_life?: number
     ritual_energy?: number
-    // Eclipse / Chaos life counter
     life_pool?: number
-    // Mana
     mana_level: number
     mana_capacity: number
 }
 
-// Matches
+
 
 export type GameMode = 'classic' | 'destiny' | 'chaos' | 'ritual' | 'dungeon_run' | 'eclipse'
 
+
+
 export type ChaosEffectName = 'earthquake' | 'mass_confusion' | 'blood_moon' | 'surge' | 'silence' | 'second_wind' | 'the_cull' | 'mirror' | 'void_rift'
+
+
 
 export type MatchObject = {
     match_id: string
@@ -62,28 +55,24 @@ export type MatchObject = {
     current_turn_player: 0 | 1
     start_time: string
     total_turns_count: number
+    graveyard: GameCard[]
     winner_id?: string
 
-    // Destiny
-    action_die?: number | null        // d6 rolled at start of each turn
-    fate_die?: number | null          // d4 determines hit variance
-    favorable_rolls_streak?: number   // consecutive action_die >= 4; 3 in a row = Judge's Verdict
+    action_die?: number | null
+    fate_die?: number | null
+    favorable_rolls_streak?: number
     mercy_roll_used?: boolean
-    reversal_coin_counter?: number    // cycles 0‑1‑2; at 0 flip a coin
+    reversal_coin_counter?: number
 
-    // Eclipse
-    eclipse_timer?: number            // counts down from 12; each end-of-turn counts down by 1
+    eclipse_timer?: number
     eclipse_active?: boolean
     eclipse_reset_count?: number
-    mana_cap_at_eclipse?: number      // mana capacity is frozen when Eclipse triggers
+    mana_cap_at_eclipse?: number
 
-    // Chaos
     chaos_deck?: ChaosEffectName[]
     current_chaos_effect?: ChaosEffectName | null
     chaos_deck_exhausted_count?: number
-    chaos_draws_per_turn?: number     // starts at 1; becomes 2 after third deck exhaustion
-
-    // Chaos per-turn temporaries (reset at end of turn)
+    chaos_draws_per_turn?: number
     blood_moon_active?: boolean
     mass_confusion_active?: boolean
     silence_active?: boolean
@@ -91,25 +80,38 @@ export type MatchObject = {
     void_rift_active?: boolean
 }
 
-// Requests
 
-export type MoveAction = 'throw_onto_table' | 'attack_card' | 'attack_hero' | 'attack_life_pool' | 'end_turn'
-    | 'sacrifice_card'      // Ritual only
-    | 'cast_ritual_spell'   // Ritual only
-    | 'choose_hero_card'    // Classic / Destiny / Dungeon Run setup
+
+export type MoveAction = 'throw_onto_table' | 'attack_card' | 'attack_hero' | 'attack_life_pool' |
+'end_turn' | 'sacrifice_card' | 'cast_ritual_spell' | 'choose_hero_card'
+
+
 
 export type MoveRequest = {
     card?: { uuid: string, place: 'hand' | 'table', side: 'self' | 'opponent' }
-    target_uuid?: string   // uuid of the card / hero being targeted
+    target_uuid?: string
     mode: GameMode
     action: MoveAction
-    spell_name?: string    // for cast_ritual_spell
+    spell_name?: string
 }
 
-// Backward-compat aliases (kept so server.ts compiles unchanged)
 
-export type playerIdentifiers = {
-    id: string
-    socketId: string
-    nickname: string
+
+export type AbilityTrigger = 'on_play' | 'in_hand' | 'damaged' | 'turn_change'
+
+
+
+export type GeneratedEvent = {
+    cardUuid?: string
+    playerId?: string
+    actionName?: 'set' | 'remove' | 'push' | 'generate_event'
+    action?: () => any
+}
+
+
+
+export type CardAbility = {
+    name: string
+    trigger: AbilityTrigger
+    description: string
 }

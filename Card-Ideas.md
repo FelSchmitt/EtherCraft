@@ -69,3 +69,7 @@
 ## Divine
 
 - Receive and deals 1.5x more damage to the **Underworld** class.
+
+## Thorns
+
+- When attacked, automatically damages the attacker back.
