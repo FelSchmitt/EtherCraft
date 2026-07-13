@@ -1,4 +1,4 @@
-import { MatchObject, MatchPlayer, MoveRequest, GameCard, ChaosEffectName } from './types'
+import { MatchObject, MatchPlayer, MoveRequest } from './types'
 import { validateAction } from './game_modes_rules'
 
 
@@ -13,7 +13,7 @@ export type ActionResult = {
 
 
 
-//  Main dispatch
+//  main dispatch
 
 export function executeAction(match: MatchObject, player: MatchPlayer, request: MoveRequest): ActionResult {
     if (match.winner_id) {
@@ -29,5 +29,4 @@ export function executeAction(match: MatchObject, player: MatchPlayer, request: 
 
 
 export function buildPlayerView(match: MatchObject, viewerPlayerId: string) {
-    return {}
 }

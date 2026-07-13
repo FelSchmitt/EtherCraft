@@ -1,6 +1,6 @@
 export type playerIdentifiers = {
     id: string
-    socketId: string
+    socket_id: string
     nickname: string
 }
 
@@ -9,6 +9,7 @@ export type playerIdentifiers = {
 export type GameCard = {
     card_id: string
     uuid: string
+    owner_id?: string
     mana_cost: number
     life: number
     max_life: number
@@ -20,17 +21,17 @@ export type GameCard = {
     is_hero?: boolean
     is_master?: boolean
     is_defense?: boolean
-    owner_id?: string
 }
 
 
 
 export type MatchPlayer = {
     id: string
-    socketId: string
+    socket_id: string
     nickname: string
     hand_cards: GameCard[]
     table_cards: GameCard[]
+    deck: GameCard[]
     soul_vessel_life?: number
     ritual_energy?: number
     life_pool?: number
@@ -82,13 +83,13 @@ export type MatchObject = {
 
 
 
-export type MoveAction = 'throw_onto_table' | 'attack_card' | 'attack_hero' | 'attack_life_pool' |
-'end_turn' | 'sacrifice_card' | 'cast_ritual_spell' | 'choose_hero_card'
+export type MoveAction = 'throw_onto_table' | 'throw_onto_defense' | 'throw_onto_master' | 'attack_card' | 'attack_hero'
+| 'attack_life_pool' | 'end_turn' | 'sacrifice_card' | 'cast_ritual_spell' | 'choose_hero_card'
 
 
 
 export type MoveRequest = {
-    card?: { uuid: string, place: 'hand' | 'table', side: 'self' | 'opponent' }
+    card_uuid?: string
     target_uuid?: string
     mode: GameMode
     action: MoveAction
@@ -97,21 +98,8 @@ export type MoveRequest = {
 
 
 
-export type AbilityTrigger = 'on_play' | 'in_hand' | 'damaged' | 'turn_change'
-
-
-
-export type GeneratedEvent = {
-    cardUuid?: string
-    playerId?: string
-    actionName?: 'set' | 'remove' | 'push' | 'generate_event'
-    action?: () => any
-}
-
-
-
 export type CardAbility = {
-    name: string
-    trigger: AbilityTrigger
-    description: string
+    trigger: 'on_play' | 'in_hand' | 'damaged' | 'turn_change'
+    timers?: {
+    }
 }

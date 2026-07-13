@@ -10,7 +10,7 @@ const ritualSpellCosts: Record<string, number> = {
     bloodbind: 5, ashen_strike: 5,
     soul_harvest: 12, purge: 12, rebirth: 12,
     dark_convergence: 22, summon_from_deep: 22,
-    annihilation: 35, necromancy_curse: 35,
+    annihilation: 35, necromancy_curse: 35
 }
 
 
@@ -20,15 +20,15 @@ const isTurn: Validator = (match, player, request) => match.players[match.curren
 
 
 const cardInHand: Validator = (match, player, request) => {
-    if (!request.card?.uuid) return fail('No card specified')
+    if (!request.card_uuid) return fail('No card specified')
 
-    return player.hand_cards.some(card => card.uuid === request.card.uuid) ? pass : fail('Card not found in your hand')
+    return player.hand_cards.some(card => card.uuid === request.card_uuid) ? pass : fail('Card not found in your hand')
 }
 
 
 
 const hasMana: Validator = (match, player, request) => {
-    const card = player.hand_cards.find(card => card.uuid === request.card?.uuid)
+    const card = player.hand_cards.find(card => card.uuid === request.card_uuid)
 
     if (!card) return fail('Card not found')
 
@@ -43,18 +43,34 @@ const boardLimit = (max: number): Validator => (match, player, request) => {
 
 
 
-const attackerOnBoard: Validator = (match, player, request) => {
-    if (!request.card?.uuid) return fail('No attacker specified')
+const defenseZoneLimit: Validator = (match, player, request) => {
+    const zone = player.table_cards.filter(card => card.is_defense)
 
-    return player.table_cards.some(card => card.uuid === request.card.uuid) ? pass : fail('Attacking card is not on the board')
+    return zone.length < 6 ? pass : fail('Defense zone is full (max 6 minions)')
+}
+
+
+
+const masterZoneLimit: Validator = (match, player, request) => {
+    const zone = player.table_cards.filter(card => card.is_master)
+
+    return zone.length < 3 ? pass : fail('Master zone is full (max 3 minions)')
+}
+
+
+
+const attackerOnBoard: Validator = (match, player, request) => {
+    if (!request.card_uuid) return fail('No attacker specified')
+
+    return player.table_cards.some(card => card.uuid === request.card_uuid) ? pass : fail('Attacking card is not on the board')
 }
 
 
 
 const attackerCanAttack: Validator = (match, player, request) => {
-    const card = player.table_cards.find(card => card.uuid === request.card?.uuid)
+    const card = player.table_cards.find(card => card.uuid === request.card_uuid)
 
-    return card?.can_attack ? pass : fail('This card cannot attack yet (summoning sickness or already attacked this turn)')
+    return card.can_attack ? pass : fail('This card cannot attack yet (summoning sickness or already attacked this turn)')
 }
 
 
@@ -110,7 +126,7 @@ const opponentHasLifePool: Validator = (match, player, request) => {
 
 
 const cardCanBeSacrificed: Validator = (match, player, request) => {
-    const card = player.hand_cards.find(c => c.uuid === request.card?.uuid)
+    const card = player.hand_cards.find(c => c.uuid === request.card_uuid)
     if (!card) return fail('Card not found in hand')
     return card.mana_cost > 0 ? pass : fail('Cards with 0 mana cost cannot be sacrificed')
 }
@@ -129,11 +145,11 @@ const canCastRitualSpell: Validator = (match, player, request) => {
 
 
 const cardInHandForHeroSelection: Validator = (match, player, request) => {
-    if (!request.card?.uuid) return fail('No card specified')
-    return player.hand_cards.some(c => c.uuid === request.card!.uuid) ? pass : fail('Card not found in your hand')
+    if (!request.card_uuid) return fail('No card specified')
+    return player.hand_cards.some(c => c.uuid === request.card_uuid) ? pass : fail('Card not found in your hand')
 }
 
-
+// main dispatch
 
 const rules: Partial<Record<`${GameMode}:${MoveAction}`, Validator[]>> = {
     'classic:throw_onto_table':  [isTurn, cardInHand, hasMana, boardLimit(7)],
@@ -148,7 +164,8 @@ const rules: Partial<Record<`${GameMode}:${MoveAction}`, Validator[]>> = {
     'destiny:end_turn':          [isTurn],
     'destiny:choose_hero_card':  [cardInHandForHeroSelection],
 
-    'chaos:throw_onto_table':    [isTurn, cardInHand, hasMana, boardLimit(6)],
+    'chaos:throw_onto_defense':  [isTurn, cardInHand, hasMana, defenseZoneLimit],
+    'chaos:throw_onto_master':   [isTurn, cardInHand, hasMana, masterZoneLimit],
     'chaos:attack_card':         [isTurn, attackerOnBoard, attackerCanAttack, hasTargetUuid, targetExistsOnOpponentBoard],
     'chaos:end_turn':            [isTurn],
 

@@ -153,7 +153,7 @@ async function updateMatch(match: MatchObject): Promise<void> {
 
 function broadcastMatchState(match: MatchObject): void {
     for (const player of match.players) {
-        socketServer.to(player.socketId).emit('match_state', buildPlayerView(match, player.id))
+        socketServer.to(player.socket_id).emit('match_state', buildPlayerView(match, player.id))
     }
 }
 
@@ -166,10 +166,11 @@ function createMatch(
 
     const players = playersIds.map((player, index) => ({
         id: player.id,
-        socketId: player.socketId,
+        socket_id: player.socket_id,
         nickname: player.nickname,
         hand_cards: handCards[index],
         table_cards: [],
+        deck: [],
         mana_level: startMana,
         mana_capacity: startMana,
         ...(mode === 'ritual' ? { soul_vessel_life: 20, ritual_energy: 3 } : {}),
@@ -229,7 +230,7 @@ socketServer.on('connection', (client: Socket) => {
 
     client.on('find_opponent', async (identifiers: { id: string; nickname: string; mode?: GameMode }) => {
         const mode: GameMode = identifiers.mode ?? 'classic'
-        opponentsQueue.push({ id: identifiers.id, socketId: client.id, nickname: identifiers.nickname })
+        opponentsQueue.push({ id: identifiers.id, socket_id: client.id, nickname: identifiers.nickname })
 
         if (opponentsQueue.length >= 2) {
             const playersIds = [opponentsQueue.shift(), opponentsQueue.shift()]
@@ -251,13 +252,13 @@ socketServer.on('connection', (client: Socket) => {
 
             await redisClient.json.set(matchId, '$', match)
 
-            socketServer.to([playersIds[0].socketId, playersIds[1].socketId]).socketsJoin(matchId)
+            socketServer.to([playersIds[0].socket_id, playersIds[1].socket_id]).socketsJoin(matchId)
 
             for (let i = 0; i < 2; i++) {
                 const me = match.players[i]
                 const opp = match.players[i === 0 ? 1 : 0]
 
-                socketServer.to(me.socketId).emit('build_match', {
+                socketServer.to(me.socket_id).emit('build_match', {
                     hand_cards: me.hand_cards,
                     table_cards: [],
                     life: 30,
@@ -272,14 +273,13 @@ socketServer.on('connection', (client: Socket) => {
                     },
                 })
 
-                socketServer.to(me.socketId).emit('chat', {
+                socketServer.to(me.socket_id).emit('chat', {
                     sender: 'Server',
                     color: '#ffee00',
                     text: `You joined match ${matchId} against ${opp.nickname} (mode: ${mode})`,
                 })
             }
 
-            // Send full typed state to both
             broadcastMatchState(match)
         }
     })
@@ -294,7 +294,7 @@ socketServer.on('connection', (client: Socket) => {
                 return
             }
 
-            const player = match.players.find(player => player.socketId === client.id)
+            const player = match.players.find(player => player.socket_id === client.id)
             const result = executeAction(match, player, request)
 
             if (!result.ok) {
@@ -326,7 +326,7 @@ socketServer.on('connection', (client: Socket) => {
     client.on('get_match', async () => {
         const match = await getMatchFromSocketId(client.id)
         if (match) {
-            client.emit('match_data', buildPlayerView(match, match.players.find(p => p.socketId === client.id).id))
+            client.emit('match_data', buildPlayerView(match, match.players.find(p => p.socket_id === client.id).id))
         }
     })
 })
