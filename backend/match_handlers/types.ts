@@ -6,18 +6,24 @@ export type playerIdentifiers = {
 
 
 
+export type CardRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'titan' | 'colossus'
+
+
+
 export type GameCard = {
     card_id: string
     uuid: string
-    owner_id?: string
     mana_cost: number
     life: number
+    life_modifiers: number[]
+    swapped_life?: number
     max_life: number
     attack_damage: number
+    attack_modifiers: number[]
     can_attack: boolean
     classes: string[]
     abilities: CardAbility[]
-    rarity: string
+    rarity: CardRarity
     is_hero?: boolean
     is_master?: boolean
     is_defense?: boolean
@@ -45,7 +51,7 @@ export type GameMode = 'classic' | 'destiny' | 'chaos' | 'ritual' | 'dungeon_run
 
 
 
-export type ChaosEffectName = 'earthquake' | 'mass_confusion' | 'blood_moon' | 'surge' | 'silence' | 'second_wind' | 'the_cull' | 'mirror' | 'void_rift'
+export type ChaosEffectName = 'earthquake' | 'mass_confusion' | 'blood_moon' | 'surge' | 'silence' | 'arcane_wind' | 'the_cull' | 'void_rift'
 
 
 
@@ -74,17 +80,12 @@ export type MatchObject = {
     current_chaos_effect?: ChaosEffectName | null
     chaos_deck_exhausted_count?: number
     chaos_draws_per_turn?: number
-    blood_moon_active?: boolean
-    mass_confusion_active?: boolean
-    silence_active?: boolean
-    surge_active?: boolean
-    void_rift_active?: boolean
 }
 
 
 
-export type MoveAction = 'throw_onto_table' | 'throw_onto_defense' | 'throw_onto_master' | 'attack_card' | 'attack_hero'
-| 'attack_life_pool' | 'end_turn' | 'sacrifice_card' | 'cast_ritual_spell' | 'choose_hero_card'
+export type MoveAction = 'throw_onto_table' | 'attack_card' | 'attack_hero' | 'attack_life_pool' |
+'end_turn' | 'sacrifice_card' | 'cast_ritual_spell' | 'choose_hero_card'
 
 
 

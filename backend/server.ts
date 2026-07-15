@@ -10,7 +10,7 @@ import { Pool } from 'pg'
 const argon2 = require('argon2')
 dotenv.config()
 
-import { playerIdentifiers, MatchObject, MoveRequest, GameMode, GameCard } from './match_handlers/types'
+import { playerIdentifiers, MatchObject, MoveRequest, GameMode, GameCard, CardRarity } from './match_handlers/types'
 import { verifyToken } from './middlewares'
 import { executeAction, buildPlayerView } from './match_handlers/match_engine'
 
@@ -72,7 +72,7 @@ expressServer.post('/login/validatefields/newaccount', async (req: Request, res:
                 [
                     req.body.account_id,
                     hash,
-                    `${Date.now()}_${Math.round(Math.random() * 10000)}_${['token', 'net', 'config', 'random'][Math.round(Math.random() * 3)]}`,
+                    `${Date.now()}_${Math.round(Math.random() * 10_000)}_${['token', 'net', 'config', 'random'][Math.round(Math.random() * 3)]}`,
                     req.body.user_nickname,
                     req.body.register_date,
                 ]
@@ -97,7 +97,7 @@ expressServer.post('/login/validatefields', async (req: Request, res: Response) 
             messages.push({ code: 0, message: 'user not found. check if it was written correctly' })
         }
 
-        const passwordIsCorrect = await argon2.verify(query.rows[0].password_hash, req.body.password)
+        const passwordIsCorrect: boolean = await argon2.verify(query.rows[0].password_hash, req.body.password)
 
         if (!passwordIsCorrect) {
             messages.push({ code: 1, message: 'password incorrect. check if it was written correctly' })
@@ -160,7 +160,7 @@ function broadcastMatchState(match: MatchObject): void {
 function createMatch(
     mode: GameMode,
     playersIds: playerIdentifiers[],
-    handCards: MatchObject['players'][0]['hand_cards'][],
+    handCards: GameCard[][],
     matchId: string): MatchObject {
     const startMana = mode === 'destiny' ? 2 : 1
 
@@ -239,16 +239,16 @@ socketServer.on('connection', (client: Socket) => {
             const uuids = await Promise.all(Array.from({ length: 6 }, () => generateCardUuid()))
 
             const starterCards = [
-                { card_id: 'giant_serpent', mana_cost: 1, life: 5, max_life: 5, attack_damage: 3, can_attack: false, classes: ['beast'], abilities: [], rarity: 'common' },
-                { card_id: 'wendigo', mana_cost: 1, life: 4, max_life: 4, attack_damage: 2, can_attack: false, classes: ['undead'], abilities: [], rarity: 'common' },
-                { card_id: 'shadow_demon', mana_cost: 2, life: 5, max_life: 5, attack_damage: 3, can_attack: false, classes: ['shadow'], abilities: [], rarity: 'uncommon' },
+                { card_id: 'giant_serpent', mana_cost: 1, life: 5, max_life: 5, attack_damage: 3, classes: ['beast'], abilities: [], rarity: 'common' as CardRarity },
+                { card_id: 'wendigo', mana_cost: 1, life: 4, max_life: 4, attack_damage: 2, classes: ['undead'], abilities: [], rarity: 'common' as CardRarity },
+                { card_id: 'shadow_demon', mana_cost: 2, life: 5, max_life: 5, attack_damage: 3, classes: ['spectral'], abilities: [], rarity: 'rare' as CardRarity },
             ]
 
-            const handCards = playersIds.map((player, index) =>
-                starterCards.map((card, index2) => ({ ...card, player: playersIds[index].id, uuid: uuids[index * 3 + index2] }))
+            const handsCards = playersIds.map((player, index) =>
+                starterCards.map((card, cardIndex) => ({ ...card, uuid: uuids[index * 3 + cardIndex], can_attack: false, life_modifiers: [], attack_modifiers: [] }))
             )
 
-            const match = createMatch(mode, playersIds, handCards, matchId)
+            const match = createMatch(mode, playersIds, handsCards, matchId)
 
             await redisClient.json.set(matchId, '$', match)
 
@@ -290,7 +290,7 @@ socketServer.on('connection', (client: Socket) => {
         try {
             const match = await getMatchFromSocketId(client.id)
             if (!match) {
-                client.emit('chat', { sender: 'Server', color: '#ff5500', text: 'You are not in a match' })
+                client.emit('chat', { sender: 'Server', color: '#ffaa00', text: 'You are not in a match' })
                 return
             }
 
@@ -348,7 +348,7 @@ async function initServer(): Promise<void> {
         console.log(`an error occured or index already exists: ${error.message}`)
     }
 
-    server.listen(3001, () => console.log('Backend server running on http://localhost:3001'))
+    server.listen(3001, () => console.log('backend server running on http://localhost:3001'))
 }
 
 initServer()

@@ -11,9 +11,9 @@
 
 - A card can or not have a special ability. Abilities can activate when drawn from the deck to the player's hand, when it's thrown on the table, damaged or the turn pass to the opponent, back to the player or after a certain amount of times. Common and Uncommon cards have no abilities, but Rare types onward can have one, or even two if they are Legendary or higher rarity.
 
-- Cards have also Classes, which make their interactions more dynamic. The classes of a card influence the damage dealt to cards of other specific classes, the damage received from certain classes, the special abilities of other cards and other mechanics. A card can have one or more classes regardless of its rarity.
+- Cards have also Classes, which make their interactions more dynamic. The classes of a card influence the damage dealt to cards of other specific classes, the damage received from certain classes, the special abilities of other cards or do nothing at all, serving merely as a tag. A card can have one or more classes regardless of its rarity.
 
-- **Defensive** is a special class, which makes cards able to prevent enemies to target cards "behind" it, so enemy cards must destroy defensive minions in the way to attack the vulnerable target (the player or other life pool that upon depletion defines victory).
+- **Defensive** is a special class, which makes cards able to prevent enemies to target cards "behind" it, so enemies must destroy defensive minions in the way to attack the vulnerable target (the player or other life pool that upon depletion defines victory).
 <br />
 
 ## Account Profiles
@@ -60,7 +60,7 @@
 
 - **CHAOS**: Each turn, before any player acts, a random card is drawn from a shared global 'Chaos Deck' and its effect is applied to the entire board. Chaos effects can be things like: all minions swap sides, every card on the board gains +1 attack, a random card is destroyed, both players draw two extra cards, mana costs are halved for the turn, etc. Neither player controls the chaos deck, so both must adapt on the fly.
 
-- **RITUAL**: There is a shared 'Altar' zone in the center of the board. Players can sacrifice their own cards to the Altar instead of playing them normally, accumulating 'Ritual Energy'. Once enough energy is stored, a player can spend it to unleash powerful spells that have dramatic board-wide effects — things that would be too strong to attach to a regular card cost. The tension comes from choosing between playing a card for its stats vs. sacrificing it for a potentially game-winning ritual.
+- **RITUAL**: There is a shared 'Altar' zone in the board. Players can sacrifice their own cards to the Altar instead of playing them normally, accumulating 'Ritual Energy'. Once enough energy is stored, a player can spend it to unleash powerful spells that have dramatic board-wide effects — things that would be too strong to attach to a regular card cost. The tension comes from choosing between playing a card for its stats vs. sacrificing it for a potentially game-winning ritual.
 
 - **DUNGEON RUN**: A solo PvE mode where one player runs through a dungeon facing a sequence of increasingly difficult AI-controlled opponents, each with a pre-built thematic deck (e.g. a Skeleton Horde deck, a Dragon Lair deck). After each win the player picks one of three random card rewards to add to their deck. If they lose, the run ends. The goal is to clear all dungeon floors. Relies on the server generating AI moves, not a second human player.
 
@@ -83,7 +83,7 @@
 
 - **Board Card Limit**: The number of board minions are limited to 7 cards.
 
-- **Mana Levels**: Every turn of a player, their mana level restores and gets +1 of full capacity until it reaches 16. The full capacity of mana levels are always limited to 16, no matter how many turns have passed.
+- **Mana Levels**: Every turn of a player, their mana level restores and gets +1 of full capacity until it reaches 12. The full capacity of mana levels are always limited to 12, no matter how many turns have passed.
 
 - **Victory**: The first player to deplete the opponent's Hero Card health (0 or negative numbers) wins. Classic is the purest expression of the game: no external forces, no timers, no sacrifices — just the cards played and the decisions made.
 
@@ -93,11 +93,11 @@
 
 - **Board Card Limit**: Board minions limited to 7 cards — same as Classic.
 
-- **The Judge's Dice**: At the start of every turn (before the active player acts), the Judge rolls two dice whose results are publicly visible to both players. The first is the **Action Die** (6-sided): it determines a constraint or bonus for the active player this turn, such as "can only play one card", "all cards played cost 1 less mana", "cannot attack with minions that have less than 3 attack", "draw an extra card", "the first card you play deals double damage", or "skip your attack phase entirely". The second die is the **Fate Die** (4-sided): it determines hit probability for all attacks this turn — on a 1, all attacks have a 25% chance to miss; on a 2, attacks are normal; on a 3, attacks have 25% chance to deal double damage; on a 4, the first attack this turn triggers a chain and hits every enemy minion for half damage.
+- **The Judge's Dice**: At the start of every turn (before the active player acts), the Judge rolls two dice whose results are publicly visible to both players. The first is the **Action Die** (6-sided): it determines a constraint or bonus for the active player this turn, these being: "can only play one card", "all cards played cost 1 less mana", "cannot attack with minions that have less than 3 attack", "draw an extra card", "the first card you play deals double damage", or "skip your attack phase entirely". The second die is the **Fate Die** (4-sided): it determines hit probability for all attacks this turn — on a 1, all attacks have a 25% chance to miss; on a 2, attacks are normal; on a 3, attacks have 25% chance to deal double damage; on a 4, the first attack this turn triggers a chain and hits every enemy minion for half damage.
 
 - **Turn Control**: Once every three turns (at the start of a player's turn), the Judge throws the **Reversal Coin** (2-sided). If it lands showing the Continuous Side, the player plays the turn normally. If it lands showing the Reversal Side, the turn passes back to the opponent instead, who then plays under whatever the dice showed. The player whose turn was reversed does not lose their coming turn — it is simply delayed by one cycle.
 
-- **Comeback Mechanic**: If a player's Hero Card health is way below the health of the opponent Hero Card, the Judge grants them a **Mercy Roll** — a free reroll of the Action Die once per game. This gives the losing player a chance to get a favorable action constraint and fight back.
+- **Comeback Mechanic**: If a player's Hero Card health is way below the health of the opponent Hero Card, the Judge grants them a **Mercy Roll** — a free reroll of the Action Die only once per game. This gives the losing player a chance to get a favorable action constraint and fight back.
 
 - **Ranked**: Destiny has its own separate ranked ladder. Because of variance, rating changes are dampened: wins give slightly less rating and losses deduct slightly less, making the ladder a longer but fairer grind.
 
@@ -119,9 +119,8 @@
   - *Blood Moon*: All attacks deal exactly 1 damage this turn, regardless of attack value.
   - *Surge*: All minions gain +2 attack until end of turn.
   - *Silence*: All special abilities are suppressed for this turn; cards act as vanilla stat blocks.
-  - *Second Wind*: Both players restore mana to full capacity.
+  - *Arcane Wind*: The mana capacity is doubled for the active player this turn.
   - *The Cull*: The minion with the lowest health on each side is immediately destroyed.
-  - *Mirror*: Both players draw two cards but must give one random card from their hand to the opponent.
   - *Void Rift*: The Master Cards of both players swap health values temporarily for this turn only, reversed at turn end.
 
 - **Empty Chaos Deck**: If the Chaos Deck runs out, it reshuffles with all 9 effects back. For the third time the Chaos Deck runs out, it becomes increasingly volatile: from this point on, two cards are drawn and applied every turn instead of one.
@@ -174,7 +173,7 @@
   - Mana capacity is locked at whatever value it reached when the Eclipse triggered — it no longer grows.
   - Any player who enters the Eclipse Phase with **no minions on the board** loses 4 additional health immediately, and every subsequent turn they spend with an empty board costs them 3 extra health on top of the standard 2.
 
-- **Resetting the Timer**: A player can delay the Eclipse by destroying **all** enemy minions in a single turn (using attacks, spells via card abilities, or any combination). If they do, the Eclipse Timer resets to **6 turns** (not the original 12). The timer can be reset multiple times, but each reset gives less time, creating escalating pressure.
+- **Resetting the Timer**: A player can delay the Eclipse by destroying **all** enemy minions in a single turn (using attacks, spells via card abilities, or any combination). If they do, the Eclipse Timer resets to **10 turns** (not the original 12). The timer can be reset multiple times, but each reset gives 2 less turns until a minimum of 2 turns, creating escalating pressure.
 
 - **Strategic implications**: Because there is no Hero Card to protect, every minion on the board is simultaneously an attacker and the only thing standing between the opponent's minions and the Life Pool. Defensive strategies centered on one powerful card are meaningless here — board presence is the only form of defense. The Eclipse Phase punishes anyone who falls behind on board state doubly: first through the doubled minions attacking the exposed Life Pool, and then through the bonus damage for having an empty board.
 

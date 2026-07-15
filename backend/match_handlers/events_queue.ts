@@ -1,7 +1,7 @@
 import { MatchObject, MatchPlayer, MoveRequest, GameMode, MoveAction, GameCard, ChaosEffectName } from './types'
 
 export type GeneratedEvent = {
-    matchProperties: (keyof MatchObject)[]
+    matchProperty: keyof MatchObject
     playerProperty?: keyof MatchPlayer
     cardProperty?: keyof GameCard
     playerId?: string
@@ -13,122 +13,148 @@ export type GeneratedEvent = {
     action?: () => any
 }
 
-type EventEmitter = (match: MatchObject, queue: GeneratedEvent[], player: MatchPlayer, request: MoveRequest) => GeneratedEvent | void
+type EventEmitter = (match: MatchObject, queue: GeneratedEvent[], requestingPlayer: MatchPlayer, request: MoveRequest) => GeneratedEvent | void
 
 
 
-const triggerAbilities: EventEmitter = (match, queue, player, request) => {
+function swapPlayersMinions(match: MatchObject) {
+    const player1Cards = match.players[0].table_cards.splice(0)
+    const player2Cards = match.players[1].table_cards.splice(0)
+
+    match.players[0].table_cards = player2Cards
+    match.players[1].table_cards = player1Cards
+}
+
+function swapMasterCardsHealths(match: MatchObject) {
+    const player1MasterCards = match.players[0].table_cards.filter(card => card.is_master)
+    const player2MasterCards = match.players[1].table_cards.filter(card => card.is_master)
+}
+
+
+
+
+
+
+const triggerAbilities: EventEmitter = (match, queue, requestingPlayer, request) => {
     queue.forEach(event => {
     })
 }
 
 
 
-const endTurnAndStartNext: EventEmitter = (match, queue, player, request) => {
-    switch (match.mode) {
-        case 'classic':
-            queue.push({ matchProperties: ['current_turn_player'], actionName: 'set', value: match.current_turn_player === 0 ? 1 : 0 })
-            break
+const endTurnAndStartNext: EventEmitter = (match, queue, requestingPlayer, request) => {
+    for (const card of requestingPlayer.table_cards) {
+        card.can_attack = true
+    }
 
-        case 'destiny':
-            queue.push({ matchProperties: ['current_turn_player'], actionName: 'set', value: match.current_turn_player === 0 ? 1 : 0 })
-            break
+    match.current_turn_player = match.current_turn_player === 0 ? 1 : 0
 
-        case 'chaos':
-            queue.push({ matchProperties: ['current_turn_player'], actionName: 'set', value: match.current_turn_player === 0 ? 1 : 0 })
+    const player = match.players[match.current_turn_player]
 
-            queue.push(
-                {
-                    matchProperties: ['blood_moon_active', 'mass_confusion_active', 'silence_active', 'surge_active', 'void_rift_active'],
-                    actionName: 'set',
-                    value: false
-                }
-            )
+    player.mana_capacity < 12 && (player.mana_capacity += 1)
+    player.mana_level = player.mana_capacity
+}
 
-            queue.push({ matchProperties: ['chaos_deck'], actionName: 'remove'})
 
-            if ((match.chaos_deck as ChaosEffectName[]).length < 2) {
-                queue.push({ matchProperties: ['chaos_deck'], actionName: 'set', value: ['earthquake', 'mass_confusion', 'blood_moon', 'surge', 'silence', 'second_wind', 'the_cull', 'mirror', 'void_rift']})
-                queue.push({ matchProperties: ['chaos_deck_exhausted_count'], actionName: 'set', value: (match.chaos_deck_exhausted_count as number) + 1})
-                
-                if ((match.chaos_deck_exhausted_count as number) >= 2) {
-                    queue.push({ matchProperties: ['chaos_draws_per_turn'], actionName: 'set', value: (match.chaos_draws_per_turn as number) + 1})
-                }
+
+const throwCardOnTable: EventEmitter = (match, queue, requestingPlayer, request) => {
+    const card = requestingPlayer.hand_cards.find(card => card.uuid === request.card_uuid) as GameCard
+
+    requestingPlayer.table_cards.push(card)
+    requestingPlayer.hand_cards.splice(requestingPlayer.hand_cards.indexOf(card), 1)
+    requestingPlayer.mana_level -= card.mana_cost
+}
+
+
+
+const attackCard: EventEmitter = (match, queue, requestingPlayer, request) => {
+    const opponent = match.players[match.current_turn_player === 0 ? 1 : 0]
+    const attacker = requestingPlayer.table_cards.find(card => card.uuid === request.card_uuid) as GameCard
+    const target = opponent.table_cards.find(card => card.uuid === request.target_uuid) as GameCard
+    
+    target.life -= attacker.attack_damage + attacker.attack_modifiers.reduce((total, current) => total + current, 0)
+    attacker.can_attack = false
+}
+
+
+
+const resetChaosEffects: EventEmitter = (match, queue, requestingPlayer, request) => {
+    if (match.current_chaos_effect === 'mass_confusion') {
+        swapPlayersMinions(match)
+    }
+
+    else if (match.current_chaos_effect === 'arcane_wind') {
+        const player = match.players[match.current_turn_player]
+
+        player.mana_capacity = Math.round(player.mana_capacity / 2)
+        player.mana_level > player.mana_capacity && (player.mana_level = player.mana_capacity)
+    }
+
+    else if (match.current_chaos_effect === 'void_rift') {
+    }
+
+    match.current_chaos_effect = null
+}
+
+
+
+const applyChaosEffects: EventEmitter = (match, queue, requestingPlayer, request) => {
+    const effect = match.chaos_deck?.shift() as ChaosEffectName
+
+    if (effect === 'earthquake') {
+        for (const player of match.players) {
+            for (const card of player.table_cards) {
+                card.life -= 2
             }
-            break
+        }
+    }
 
-        case 'ritual':
-            queue.push({ matchProperties: ['current_turn_player'], actionName: 'set', value: match.current_turn_player === 0 ? 1 : 0 })
-            break
+    else if (effect === 'mass_confusion') {
+        swapPlayersMinions(match)
+    }
 
-        case 'dungeon_run':
-            queue.push({ matchProperties: ['current_turn_player'], actionName: 'set', value: match.current_turn_player === 0 ? 1 : 0 })
-            break
+    else if (effect === 'the_cull') {
+        const player1Cards = match.players[0].table_cards.sort((a, b) => a.life - b.life)
+        const player2Cards = match.players[1].table_cards.sort((a, b) => a.life - b.life)
 
-        case 'eclipse':
-            queue.push({ matchProperties: ['current_turn_player'], actionName: 'set', value: match.current_turn_player === 0 ? 1 : 0 })
-            break
+        player1Cards.length > 0 && (player1Cards[0].life = 0)
+        player2Cards.length > 0 && (player2Cards[0].life = 0)
+    }
+
+    else if (effect === 'void_rift') {
+    }
+
+    else if (effect === 'arcane_wind') {
+        match.players[match.current_turn_player].mana_capacity *= 2
+        match.players[match.current_turn_player].mana_level *= 2
+    }
+
+    match.current_chaos_effect = effect
+
+    if ((match.chaos_deck as ChaosEffectName[]).length <= 0) {
+        const chaosEffects: ChaosEffectName[] = ['earthquake', 'mass_confusion', 'blood_moon', 'surge', 'silence', 'arcane_wind', 'the_cull', 'void_rift']
+        const shuffledChaosEffects: ChaosEffectName[] = []
+
+        while (chaosEffects.length > 0) {
+            shuffledChaosEffects.push(...chaosEffects.splice(Math.round(Math.random() * chaosEffects.length), 1))
+        }
+
+        (match.chaos_deck_exhausted_count as number) += 1
+        match.chaos_deck = shuffledChaosEffects
+
+        if ((match.chaos_deck_exhausted_count as number) >= 3) {
+            (match.chaos_draws_per_turn as number) += 1
+        }
     }
 }
 
 
 
-const addCard: EventEmitter = (match, queue, player, request) => {
-    queue.push({ actionName: 'add', matchProperties: ['players'], playerId: player.id, playerProperty: 'table_cards' })
-}
-
-
-
-const removeCard: EventEmitter = (match, queue, player, request) => {
-    queue.push({ actionName: 'remove', matchProperties: ['players'], playerId: player.id, playerProperty: 'hand_cards', cardId: request.card_uuid })
-}
-
-
-
-const attackCard: EventEmitter = (match, queue, player, request) => {
-}
-
-
-
-const attackLifePool: EventEmitter = (match, queue, player, request) => {
-}
-
-
-
-const chooseHeroCard: EventEmitter = (match, queue, player, request) => {
-}
-
-
-
-const sacrificeCard: EventEmitter = (match, queue, player, request) => {
-}
-
-
-
-const drawFromChaosDeck: EventEmitter = (match, queue, player, request) => {
-}
-
-
-
-const applyChaosEffect: EventEmitter = (match, queue, player, request) => {
-}
-
-
-
-const toggleChaosEffects: EventEmitter = (match, queue, player, request) => {
-}
-
-
-
-const titanSplit: EventEmitter = (match, queue, player, request) => {
-}
-
-
-
-const removeDeadCards: EventEmitter = (match, queue, player, request) => {
+const removeDeadCards: EventEmitter = (match, queue, requestingPlayer, request) => {
     match.players.forEach(player => {
         player.table_cards.forEach((card, index) => {
-            if (card.life <= 0) {
+            if (card.life + card.life_modifiers.reduce((total, current) => total + current, 0) <= 0) {
+                match.graveyard.push(...player.table_cards.splice(index, 1))
             }
         })
     })
@@ -136,50 +162,49 @@ const removeDeadCards: EventEmitter = (match, queue, player, request) => {
 
 
 
-const checkForWinners: EventEmitter = (match, queue, player, request) => {
+const checkForWinner: EventEmitter = (match, queue, requestingPlayer, request) => {
 }
 
 
 
 const moveEvents: Partial<Record<`${GameMode}:${MoveAction}`, EventEmitter[]>> = {
-    'classic:throw_onto_table': [removeCard, addCard, triggerAbilities],
-    'classic:attack_card': [],
-    'classic:attack_hero': [],
-    'classic:end_turn': [],
+    'classic:throw_onto_table': [throwCardOnTable],
+    'classic:attack_card': [attackCard, removeDeadCards],
+    'classic:attack_hero': [attackCard, removeDeadCards],
+    'classic:end_turn': [endTurnAndStartNext],
     'classic:choose_hero_card': [],
 
-    'destiny:throw_onto_table': [],
-    'destiny:attack_card': [],
-    'destiny:attack_hero': [],
+    'destiny:throw_onto_table': [throwCardOnTable],
+    'destiny:attack_card': [attackCard, removeDeadCards],
+    'destiny:attack_hero': [attackCard, removeDeadCards],
     'destiny:end_turn': [],
     'destiny:choose_hero_card': [],
 
-    'chaos:throw_onto_defense': [],
-    'chaos:throw_onto_master': [],
-    'chaos:attack_card': [],
-    'chaos:end_turn': [],
+    'chaos:throw_onto_table': [throwCardOnTable],
+    'chaos:attack_card': [attackCard, removeDeadCards],
+    'chaos:end_turn': [resetChaosEffects, endTurnAndStartNext, applyChaosEffects, removeDeadCards],
 
-    'ritual:throw_onto_table': [],
-    'ritual:attack_card': [],
-    'ritual:end_turn': [],
+    'ritual:throw_onto_table': [throwCardOnTable],
+    'ritual:attack_card': [attackCard, removeDeadCards],
+    'ritual:end_turn': [endTurnAndStartNext],
     'ritual:sacrifice_card': [],
     'ritual:cast_ritual_spell': [],
 
-    'dungeon_run:throw_onto_table': [],
-    'dungeon_run:attack_card': [],
-    'dungeon_run:attack_hero': [],
-    'dungeon_run:end_turn': [],
+    'dungeon_run:throw_onto_table': [throwCardOnTable],
+    'dungeon_run:attack_card': [attackCard, removeDeadCards],
+    'dungeon_run:attack_hero': [attackCard, removeDeadCards],
+    'dungeon_run:end_turn': [endTurnAndStartNext],
     'dungeon_run:choose_hero_card': [],
 
-    'eclipse:throw_onto_table': [],
-    'eclipse:attack_card': [],
+    'eclipse:throw_onto_table': [throwCardOnTable],
+    'eclipse:attack_card': [attackCard, removeDeadCards],
     'eclipse:attack_life_pool': [],
     'eclipse:end_turn': [],
 }
 
 // main dispatch
 
-export function createMatchUpdatesQueue(match: MatchObject, player: MatchPlayer, request: MoveRequest): GeneratedEvent[] {
+export function createMatcheEventsQueue(match: MatchObject, requestingPlayer: MatchPlayer, request: MoveRequest): GeneratedEvent[] {
     const key = `${match.mode}:${request.action}` as `${GameMode}:${MoveAction}`
     const events = moveEvents[key]
 

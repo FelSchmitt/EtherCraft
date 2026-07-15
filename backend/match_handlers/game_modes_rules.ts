@@ -38,23 +38,9 @@ const hasMana: Validator = (match, player, request) => {
 
 
 const boardLimit = (max: number): Validator => (match, player, request) => {
-    return player.table_cards.length < max ? pass : fail(`Board is full (max ${max} minions)`)
-}
+    const minionsCount = player.table_cards.filter(card => !card.is_master)
 
-
-
-const defenseZoneLimit: Validator = (match, player, request) => {
-    const zone = player.table_cards.filter(card => card.is_defense)
-
-    return zone.length < 6 ? pass : fail('Defense zone is full (max 6 minions)')
-}
-
-
-
-const masterZoneLimit: Validator = (match, player, request) => {
-    const zone = player.table_cards.filter(card => card.is_master)
-
-    return zone.length < 3 ? pass : fail('Master zone is full (max 3 minions)')
+    return minionsCount.length < max ? pass : fail(`Board is full (max ${max} minions)`)
 }
 
 
@@ -95,7 +81,7 @@ const defensiveMustBeTargetedFirst: Validator = (match, player, request) => {
 
     const target = opponent.table_cards.find(card => card.uuid === request.target_uuid)
 
-    return target?.classes.includes('defensive') ? pass : fail('Must destroy defensive minions before targeting other cards')
+    return target?.classes.includes('defensive') ? pass : fail('Must destroy defensive minions before targeting others')
 }
 
 
@@ -111,7 +97,7 @@ const opponentHasHero: Validator = (match, player, request) => {
 
 
 const noDefensivesBlockingHero: Validator = (match, player, request) => {
-    const opponent = match.players.find(p => p.id !== player.id)!
+    const opponent = match.players.find(p => p.id !== player.id)
     const defensive = opponent.table_cards.filter(c => c.classes.includes('defensive'))
     return defensive.length === 0 ? pass : fail('You must destroy all Defensive minions before attacking the hero')
 }
@@ -119,7 +105,7 @@ const noDefensivesBlockingHero: Validator = (match, player, request) => {
 
 
 const opponentHasLifePool: Validator = (match, player, request) => {
-    const opponent = match.players.find(p => p.id !== player.id)!
+    const opponent = match.players.find(p => p.id !== player.id)
     return opponent.life_pool !== undefined ? pass : fail('No life pool to attack in this mode')
 }
 
@@ -137,7 +123,7 @@ const canCastRitualSpell: Validator = (match, player, request) => {
     const spell = request.spell_name
     if (!spell) return fail('No spell name specified')
     const cost = ritualSpellCosts[spell]
-    if (cost === undefined) return fail(`Unknown ritual spell: "${spell}"`)
+    if (!cost) return fail(`Unknown ritual spell: "${spell}"`)
     const energy = player.ritual_energy ?? 0
     return energy >= cost ? pass : fail(`Not enough Ritual Energy (need ${cost}, have ${energy})`)
 }
@@ -164,8 +150,7 @@ const rules: Partial<Record<`${GameMode}:${MoveAction}`, Validator[]>> = {
     'destiny:end_turn':          [isTurn],
     'destiny:choose_hero_card':  [cardInHandForHeroSelection],
 
-    'chaos:throw_onto_defense':  [isTurn, cardInHand, hasMana, defenseZoneLimit],
-    'chaos:throw_onto_master':   [isTurn, cardInHand, hasMana, masterZoneLimit],
+    'chaos:throw_onto_table':    [isTurn, cardInHand, hasMana, boardLimit(6)],
     'chaos:attack_card':         [isTurn, attackerOnBoard, attackerCanAttack, hasTargetUuid, targetExistsOnOpponentBoard],
     'chaos:end_turn':            [isTurn],
 
