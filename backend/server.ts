@@ -173,9 +173,9 @@ function createMatch(
         deck: [],
         mana_level: startMana,
         mana_capacity: startMana,
+        ...(mode === 'destiny' ? { favorable_rolls_streak: 0 } : {}),
         ...(mode === 'ritual' ? { soul_vessel_life: 20, ritual_energy: 3 } : {}),
         ...(mode === 'eclipse' ? { life_pool: 30 } : {}),
-        ...(mode === 'chaos' ? { master_cards: [] as any[], defense_cards: [] as any[] } : {}),
     }))
 
     const base: MatchObject = {
@@ -204,8 +204,8 @@ function createMatch(
     if (mode === 'destiny') {
         base.action_die = null
         base.fate_die = null
-        base.favorable_rolls_streak = 0
         base.mercy_roll_used = false
+        base.reversal_coin = false
         base.reversal_coin_counter = 0
     }
 

@@ -1,3 +1,4 @@
+import { cardStateUpdate } from './../../frontend/app/game/socket_channels';
 import { MatchObject, MatchPlayer, MoveRequest, GameMode, MoveAction, GameCard, ChaosEffectName } from './types'
 
 export type GeneratedEvent = {
@@ -25,7 +26,7 @@ function swapPlayersMinions(match: MatchObject) {
     match.players[1].table_cards = player1Cards
 }
 
-function swapMasterCardsHealths(match: MatchObject) {
+function swapMasterMinionsHealths(match: MatchObject) {
     const player1MasterCards = match.players[0].table_cards.filter(card => card.is_master)
     const player2MasterCards = match.players[1].table_cards.filter(card => card.is_master)
 }
@@ -67,11 +68,11 @@ const throwCardOnTable: EventEmitter = (match, queue, requestingPlayer, request)
 
 
 
-const attackCard: EventEmitter = (match, queue, requestingPlayer, request) => {
+const attackMinion: EventEmitter = (match, queue, requestingPlayer, request) => {
     const opponent = match.players[match.current_turn_player === 0 ? 1 : 0]
     const attacker = requestingPlayer.table_cards.find(card => card.uuid === request.card_uuid) as GameCard
     const target = opponent.table_cards.find(card => card.uuid === request.target_uuid) as GameCard
-    
+
     target.life -= attacker.attack_damage + attacker.attack_modifiers.reduce((total, current) => total + current, 0)
     attacker.can_attack = false
 }
@@ -150,7 +151,7 @@ const applyChaosEffects: EventEmitter = (match, queue, requestingPlayer, request
 
 
 
-const removeDeadCards: EventEmitter = (match, queue, requestingPlayer, request) => {
+const removeDeadMinions: EventEmitter = (match, queue, requestingPlayer, request) => {
     match.players.forEach(player => {
         player.table_cards.forEach((card, index) => {
             if (card.life + card.life_modifiers.reduce((total, current) => total + current, 0) <= 0) {
@@ -162,42 +163,105 @@ const removeDeadCards: EventEmitter = (match, queue, requestingPlayer, request) 
 
 
 
-const checkForWinner: EventEmitter = (match, queue, requestingPlayer, request) => {
+const setHeroMinion: EventEmitter = (match, queue, requestingPlayer, request) => {
+    const cardIndex = requestingPlayer.deck.findIndex(card => card.uuid === request.card_uuid)
+    const opponent = match.players.find(player => player !== requestingPlayer) as MatchPlayer
+
+    requestingPlayer.deck[cardIndex].is_hero = true
+    requestingPlayer.deck[cardIndex].life = 30
+    requestingPlayer.table_cards.push(...requestingPlayer.deck.splice(cardIndex, 1))
+
+    if (opponent.table_cards.some(card => card.is_hero)) {
+        match.current_turn_player = Math.round(Math.random()) as 0 | 1
+    }
+}
+
+
+
+const checkForWinnerByDefeatedMinions: EventEmitter = (match, queue, requestingPlayer, request) => {
+    const player2 = match.players.find(player => player !== requestingPlayer) as MatchPlayer
+    const player1MainCards = requestingPlayer.table_cards.filter(card => card.is_hero || card.is_master)
+    const player2MainCards = player2.table_cards.filter(card => card.is_hero || card.is_master)
+
+    if (player1MainCards.length === 0 && player2MainCards.length === 0) {
+        match.both_players_lost = true
+    }
+
+    else if (player1MainCards.length === 0) {
+        match.winner_id = requestingPlayer.id
+    }
+
+    else if (player2MainCards.length === 0) {
+        match.winner_id = player2.id
+    }
+}
+
+
+
+const checkForWinnerByDepletedLifePool: EventEmitter = (match, queue, requestingPlayer, request) => {
+    const player2 = match.players.find(player => player !== requestingPlayer) as MatchPlayer
+    const player1LifePool = requestingPlayer.life_pool || requestingPlayer.soul_vessel_life as number
+    const player2LifePool = player2.life_pool || player2.soul_vessel_life as number
+
+    if (player1LifePool <= 0 && player2LifePool <= 0) {
+        match.both_players_lost = true
+    }
+
+    else if (player1LifePool <= 0) {
+        match.winner_id = requestingPlayer.id
+    }
+
+    else if (player2LifePool <= 0) {
+        match.winner_id = player2.id
+    }
+}
+
+
+
+const checkForWinnerByJudgeVerdict: EventEmitter = (match, queue, requestingPlayer, request) => {
+    const otherPlayer = match.players.find(player => player !== requestingPlayer) as MatchPlayer
+    const player1Streaks = requestingPlayer.favorable_rolls_streak as number
+    const player2Streaks = otherPlayer.favorable_rolls_streak as number
+
+    if (player1Streaks >= 3) {
+        match.winner_id = requestingPlayer.id
+    }
+
+    else if (player2Streaks >= 3) {
+        match.winner_id = otherPlayer.id
+    }
 }
 
 
 
 const moveEvents: Partial<Record<`${GameMode}:${MoveAction}`, EventEmitter[]>> = {
     'classic:throw_onto_table': [throwCardOnTable],
-    'classic:attack_card': [attackCard, removeDeadCards],
-    'classic:attack_hero': [attackCard, removeDeadCards],
+    'classic:attack_minion': [attackMinion, removeDeadMinions, checkForWinnerByDefeatedMinions],
     'classic:end_turn': [endTurnAndStartNext],
-    'classic:choose_hero_card': [],
+    'classic:choose_hero_minion': [setHeroMinion],
 
     'destiny:throw_onto_table': [throwCardOnTable],
-    'destiny:attack_card': [attackCard, removeDeadCards],
-    'destiny:attack_hero': [attackCard, removeDeadCards],
-    'destiny:end_turn': [],
-    'destiny:choose_hero_card': [],
+    'destiny:attack_minion': [attackMinion, removeDeadMinions, checkForWinnerByDefeatedMinions, checkForWinnerByJudgeVerdict],
+    'destiny:end_turn': [endTurnAndStartNext],
+    'destiny:choose_hero_minion': [setHeroMinion],
 
     'chaos:throw_onto_table': [throwCardOnTable],
-    'chaos:attack_card': [attackCard, removeDeadCards],
-    'chaos:end_turn': [resetChaosEffects, endTurnAndStartNext, applyChaosEffects, removeDeadCards],
+    'chaos:attack_minion': [attackMinion, removeDeadMinions],
+    'chaos:end_turn': [resetChaosEffects, endTurnAndStartNext, applyChaosEffects, removeDeadMinions, checkForWinnerByDefeatedMinions],
 
     'ritual:throw_onto_table': [throwCardOnTable],
-    'ritual:attack_card': [attackCard, removeDeadCards],
+    'ritual:attack_minion': [attackMinion, removeDeadMinions, checkForWinnerByDepletedLifePool],
     'ritual:end_turn': [endTurnAndStartNext],
     'ritual:sacrifice_card': [],
     'ritual:cast_ritual_spell': [],
 
     'dungeon_run:throw_onto_table': [throwCardOnTable],
-    'dungeon_run:attack_card': [attackCard, removeDeadCards],
-    'dungeon_run:attack_hero': [attackCard, removeDeadCards],
+    'dungeon_run:attack_minion': [attackMinion, removeDeadMinions, checkForWinnerByDefeatedMinions],
     'dungeon_run:end_turn': [endTurnAndStartNext],
-    'dungeon_run:choose_hero_card': [],
+    'dungeon_run:choose_hero_minion': [],
 
     'eclipse:throw_onto_table': [throwCardOnTable],
-    'eclipse:attack_card': [attackCard, removeDeadCards],
+    'eclipse:attack_minion': [attackMinion, removeDeadMinions, checkForWinnerByDepletedLifePool],
     'eclipse:attack_life_pool': [],
     'eclipse:end_turn': [],
 }

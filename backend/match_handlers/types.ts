@@ -10,6 +10,11 @@ export type CardRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' |
 
 
 
+export type RitualSpellNames = 'bloodbind' | 'ashen_strike' | 'soul_harvest' | 'purge' | 'rebirth' |
+'dark_convergence' | 'summon_from_deep' | 'annihilation' | 'necromancy_curse'
+
+
+
 export type GameCard = {
     card_id: string
     uuid: string
@@ -41,6 +46,7 @@ export type MatchPlayer = {
     soul_vessel_life?: number
     ritual_energy?: number
     life_pool?: number
+    favorable_rolls_streak?: number
     mana_level: number
     mana_capacity: number
 }
@@ -64,11 +70,12 @@ export type MatchObject = {
     total_turns_count: number
     graveyard: GameCard[]
     winner_id?: string
+    both_players_lost?: boolean
 
     action_die?: number | null
     fate_die?: number | null
-    favorable_rolls_streak?: number
     mercy_roll_used?: boolean
+    reversal_coin?: boolean
     reversal_coin_counter?: number
 
     eclipse_timer?: number
@@ -84,8 +91,8 @@ export type MatchObject = {
 
 
 
-export type MoveAction = 'throw_onto_table' | 'attack_card' | 'attack_hero' | 'attack_life_pool' |
-'end_turn' | 'sacrifice_card' | 'cast_ritual_spell' | 'choose_hero_card'
+export type MoveAction = 'throw_onto_table' | 'attack_minion' | 'attack_life_pool' |
+'end_turn' | 'sacrifice_card' | 'cast_ritual_spell' | 'choose_hero_minion'
 
 
 
@@ -101,6 +108,4 @@ export type MoveRequest = {
 
 export type CardAbility = {
     trigger: 'on_play' | 'in_hand' | 'damaged' | 'turn_change'
-    timers?: {
-    }
 }

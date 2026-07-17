@@ -54,9 +54,9 @@
 
 ## Game Modes
 
-- **CLASSIC**: Very similar to the gameplay of Hearthstone, where cards have mana costs to throw on the table, minions must wait the next turn when first thrown to attack. Players must choose a card from their deck to be their hero. Wins the one that brings the health of the opponent's Hero Card to zero.
+- **CLASSIC**: Very similar to the gameplay of Hearthstone, where cards have mana costs to throw on the table, minions must wait the next turn when first thrown to attack. Players must choose a card from their deck to be their minion hero. Wins the one that brings the health of the opponent's Hero Minion to zero.
 
-- **DESTINY**: A mode that is more unpredictable. When cards attack each other, there's a chance the attack will miss the target, be weak or strong. The **Judge** (a character on the side edge of the board) has the power of decision: It rolls dice (similar to real-life board games) that randomly tell what players can do and how, and can choose whose player is the turn. This mode gives higher rewards to the winner for taking higher risks.
+- **DESTINY**: A mode that is more unpredictable. When minions attack each other, there's a chance the attack will miss the target, be weak or strong. The **Judge** (a character on the side edge of the board) has the power of decision: It rolls dice (similar to real-life board games) that randomly tell what players can do and how, and can choose whose player is the turn. This mode gives higher rewards to the winner for taking higher risks.
 
 - **CHAOS**: Each turn, before any player acts, a random card is drawn from a shared global 'Chaos Deck' and its effect is applied to the entire board. Chaos effects can be things like: all minions swap sides, every card on the board gains +1 attack, a random card is destroyed, both players draw two extra cards, mana costs are halved for the turn, etc. Neither player controls the chaos deck, so both must adapt on the fly.
 
@@ -79,19 +79,19 @@
 
 ## Classic Mode
 
-- **Setup**: Before the match begins, each player browses their deck and chooses a card to be their **Hero Card**. The chosen Hero Card gets it's health value set to 30, no matter the previous or default value. Both players start with 1 mana and full capacity of 1.
+- **Setup**: Before the match begins, each player browses their deck and chooses a card to be their **Hero Minion**. The chosen Hero Minion gets it's health value set to 30, no matter the previous or default value. Both players start with 1 mana and full capacity of 1.
 
-- **Board Card Limit**: The number of board minions are limited to 7 cards.
+- **Board Limit**: The number of board minions are limited to 7.
 
 - **Mana Levels**: Every turn of a player, their mana level restores and gets +1 of full capacity until it reaches 12. The full capacity of mana levels are always limited to 12, no matter how many turns have passed.
 
-- **Victory**: The first player to deplete the opponent's Hero Card health (0 or negative numbers) wins. Classic is the purest expression of the game: no external forces, no timers, no sacrifices — just the cards played and the decisions made.
+- **Victory**: The first player to deplete the opponent's Hero Minion health (0 or negative numbers) wins. Classic is the purest expression of the game: no external forces, no timers, no sacrifices — just the cards played and the decisions made.
 
 ## Destiny
 
-- **Setup**: Neither player chooses their Hero Card. Instead, the match opens with the **Rite of Fate** — the Judge draws 3 cards at random from each player's shuffled deck and lays them face-up in a row. Each player simultaneously points to one of their three revealed cards; that card becomes their Hero Card. The other two are returned to their deck. Because neither player can fully control this moment, both start at 2 mana instead of 1 — the Judge's boon for surrendering choice to fate.
+- **Setup**: Neither player chooses their Hero Minion. Instead, the match opens with the **Rite of Fate** — the Judge draws 3 cards at random from each player's shuffled deck and lays them face-up in a row. Each player points to one of their three revealed cards; that card becomes their Hero Minion. The other two are returned to their deck. Because neither player can fully control this moment, both start at 2 mana instead of 1 — the Judge's boon for surrendering choice to fate.
 
-- **Board Card Limit**: Board minions limited to 7 cards — same as Classic.
+- **Board Limit**: Board minions limited to 7 — same as Classic.
 
 - **The Judge's Dice**: At the start of every turn (before the active player acts), the Judge rolls two dice whose results are publicly visible to both players. The first is the **Action Die** (6-sided): it determines a constraint or bonus for the active player this turn, these being: "can only play one card", "all cards played cost 1 less mana", "cannot attack with minions that have less than 3 attack", "draw an extra card", "the first card you play deals double damage", or "skip your attack phase entirely". The second die is the **Fate Die** (4-sided): it determines hit probability for all attacks this turn — on a 1, all attacks have a 25% chance to miss; on a 2, attacks are normal; on a 3, attacks have 25% chance to deal double damage; on a 4, the first attack this turn triggers a chain and hits every enemy minion for half damage.
 
@@ -101,45 +101,47 @@
 
 - **Ranked**: Destiny has its own separate ranked ladder. Because of variance, rating changes are dampened: wins give slightly less rating and losses deduct slightly less, making the ladder a longer but fairer grind.
 
-- **Victory**: There are two ways to win. The standard path is bringing the opponent's Hero Card to 0 health. The second is the **Judge's Verdict**: if the same player receives three consecutive favorable Action Die results (a roll of 4 or higher, three turns in a row), the Judge intervenes and ends the match in that player's favor — declaring that fate itself has chosen a winner, regardless of the current health totals. The board displays a warning after the second favorable roll, so both players know a Verdict is one turn away, adding a dramatic final moment of tension.
+- **Victory**: There are two ways to win. The standard path is bringing the opponent's Hero Minion to 0 health. The second is the **Judge's Verdict**: if the same player receives three consecutive favorable Action Die results (a roll of 4 or higher, three turns in a row), the Judge intervenes and ends the match in that player's favor — declaring that fate itself has chosen a winner, regardless of the current health totals. The board displays a warning after the second favorable roll, so both players know a Verdict is possibly one turn away, adding a dramatic final moment of tension.
 
 ## Chaos
 
-- **Setup**: There's no Hero Card. Instead, cards on both players sides are divided in the **Master Zone**(Master Cards) and the **Defense Zone**(Defending Cards). Defending cards are responsible for being the target of enemy attacks, being a middle field. Players cannot target the enemy Master Zone if there are defending cards in the way, they must destroy all of them to attack the master cards. In the beginning, 3 random cards are automatically drawn from each of the players decks and thrown on the Master Zone for them. Both players start at 1 mana.
+- **Setup**: There's no Hero Minion. Instead, minions on both players sides are divided in the **Master Zone** (Master Minions) and the **Defense Zone** (Defending Minions). Defending minions are responsible for being the target of enemy attacks, being a middle field. Players cannot target the enemy Master Zone if there are defending minions in the way, they must destroy all of them to attack the master minions. In the beginning, 3 random cards are automatically drawn from each of the players decks and thrown on the Master Zone for them. Both players start at 1 mana.
 
-- **Board Card Limit**: The Master Zone can have 3 cards at maximum. The Defense Zone is limited to 6 cards.
+- **Board Limit**: The Master Zone can have 3 minions at max, and the Defense Zone is limited to 6 minions. Players can only place cards in the Defense Zone, so they cannot replace defeated master minions to avoid losing and extend the game's duration endlessly.
 
 - **Chaos Phase**: At the very start of each turn (before the active player does anything), the top card of the Chaos Deck is flipped and its effect is immediately applied to the board for the entirety of that turn only, unless the effect explicitly says it persists.
 
 - **Restrictions**: The Defensive class does not have effect on this mode since the Defense Zone already does this.
 
 - **Chaos Effects (what can appear in the deck)**:
-  - *Earthquake*: All minions on both sides lose 2 health. Cards that reach zero are destroyed.
+  - *Earthquake*: All minions on both sides lose 2 health. Minions that reach zero are destroyed.
   - *Mass Confusion*: All minions swap to the opponent's side until end of turn, then return.
   - *Blood Moon*: All attacks deal exactly 1 damage this turn, regardless of attack value.
   - *Surge*: All minions gain +2 attack until end of turn.
   - *Silence*: All special abilities are suppressed for this turn; cards act as vanilla stat blocks.
   - *Arcane Wind*: The mana capacity is doubled for the active player this turn.
   - *The Cull*: The minion with the lowest health on each side is immediately destroyed.
-  - *Void Rift*: The Master Cards of both players swap health values temporarily for this turn only, reversed at turn end.
+  - *Void Rift*: The Master Minions of both players swap health values temporarily for this turn only, reversed at turn end.
 
 - **Empty Chaos Deck**: If the Chaos Deck runs out, it reshuffles with all 9 effects back. For the third time the Chaos Deck runs out, it becomes increasingly volatile: from this point on, two cards are drawn and applied every turn instead of one.
 
-- **Victory**: Wins the one that destroys all the Master Cards of the opponent, no matter if there are still cards in the Defense Zone.
+- **Victory**: Wins the one that destroys all the Master Minions of the opponent, no matter if there are still cards in the Defense Zone.
 
 ## Ritual
 
-- **Setup**: There are no Hero Cards in Ritual. Each player instead has a **Soul Vessel** — a glowing artifact displayed on their side of the board with 20 health, representing their life force. The Soul Vessel cannot attack, cannot be targeted by regular minion attacks, and does not count as a card for any game mechanic. The only ways to damage a Soul Vessel are through Ritual Spells and through card abilities that explicitly name the opponent or "any target". Players build their board with minions as usual and start at 1 mana. The Altar begins with 3 pre-loaded Ritual Energy for each player, representing the ambient magic of the ritual ground.
+- **Setup**: There are no Hero Cards in Ritual. Each player instead has a **Soul Vessel** — a glowing artifact displayed on their side of the board with 20 health, representing their life force. The Soul Vessel cannot attack, cannot be targeted by regular minion attacks, and does not count as a minion for any game mechanic. The only ways to damage a Soul Vessel are through Ritual Spells and through card abilities that explicitly name the opponent or "any target". Players build their board with minions as usual and start at 1 mana. The Altar begins with 3 pre-loaded Ritual Energy for each player, representing the ambient magic of the ritual ground.
 
-- **Board Card Limit**: Maximum of 8 cards as minions.
+- **Board Limit**: Maximum of 8 minions.
 
 - **Sacrificing**: Instead of playing a card onto the board normally, a player may place it on the Altar as a sacrifice. A sacrificed card is permanently removed from the game (not sent to the Graveyard). The Ritual Energy gained equals the card's mana cost. Cards with a mana cost of 0 cannot be sacrificed.
 
-- **Unleashing a Ritual**: When a player's Ritual Energy bar reaches a set threshold, they may choose to spend the energy during their turn (before or after other actions) to cast a **Spell**. Each player can only cast one Ritual Spell per turn. Spending energy does not require a mana cost — it is paid entirely from the accumulated Ritual Energy. Energy thresholds and spells:
+- **Unleashing a Ritual**: When a player's Ritual Energy bar reaches a set threshold, they may choose to spend the energy during their turn (before or after other actions) to cast a **Spell**, automatically damaging the opponent's Soul Vessel. Each player can only cast one Ritual Spell per turn. Spending energy does not require a mana cost — it is paid entirely from the accumulated Ritual Energy. Energy thresholds and spells:
   - **Minor Ritual (8 energy)** — *Bloodbind*: Restore your Soul Vessel's health by 6. | *Ashen Strike*: Deal 4 damage to any target (including the enemy Soul Vessel).
   - **Moderate Ritual (16 energy)** — *Soul Harvest*: Draw 3 cards. | *Purge*: Destroy any one enemy minion outright. | *Rebirth*: Ressurect one random defeated card from the Graveyard back to the board.
   - **Major Ritual (24 energy)** — *Dark Convergence*: Deal 3 damage to all enemy minions and the opponent's Soul Vessel. | *Summon from the Deep*: Summon a random Rare card from outside the game onto your side of the board.
   - **Grand Ritual (32 energy)** — *Annihilation*: Destroy all minions on the board. | *Necromancy Curse*: Resurrect all your destroyed minions as 1/1 copies (stats reset, abilities kept).
+
+- **Spell Powers**: Ritual Spells damage the enemy Soul Vessel by approximately one third of it's energy cost, so: Minor Rituals - 3 damage; Moderate Rituals - 6 damage; Major Rituals - 8 damage; Grand Rituals - 10 damage.
 
 - **Strategic tension**: Sacrificing a strong card gives more energy but removes a board presence that could have been used to fight. Sacrificing weak or useless cards is slower but preserves board state. Because the Soul Vessel is immune to minion attacks, the only path to victory runs through the Altar.
 
