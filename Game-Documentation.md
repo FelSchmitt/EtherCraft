@@ -37,7 +37,7 @@
 
 - **Dust** is a crafting material obtained by disenchanting cards, players can disenchant duplicates or unwanted cards into it. The **Forge** is used to craft a card of their choice, but for that enough Dust is needed and players must have other cards with the classes the desired card to craft has. However, crafting a card from scratch costs significantly more Dust than disenchanting it yields — meaning a player cannot efficiently farm Dust to craft a specific card. The Forge is a last resort to fill gaps in a nearly complete build, not a shortcut to skip the collection process.
 
-- **Discovery Tokens** are a special reward earned from quests and milestones. A Discovery Token lets the player choose one card from a set of **three randomly offered options** — not from the entire card pool. This gives a meaningful moment of choice while preserving randomness, and nudges players to consider cards they might not have thought to use.
+- **Discovery Tokens** are a special reward earned from quests and milestones. A Discovery Token lets the player choose one card from a set of **three randomly offered options**. This gives a meaningful moment of choice while preserving randomness, and nudges players to consider cards they might not have thought to use.
 
 - **Daily Quests** are three rotating objectives assigned each day. Crucially, quests are more tied to *how* you play than *what* you play with. Examples: "Win a match where you played at least 4 different card Classes", "Deal damage using cards from at least 3 different rarities", "Win a match in a mode you haven't won in today", "Play a card with the Spectral class and win the match". Completing a daily quest rewards Coins and XP.
 
@@ -97,7 +97,7 @@
 
 - **Turn Control**: Once every three turns (at the start of a player's turn), the Judge throws the **Reversal Coin** (2-sided). If it lands showing the Continuous Side, the player plays the turn normally. If it lands showing the Reversal Side, the turn passes back to the opponent instead, who then plays under whatever the dice showed. The player whose turn was reversed does not lose their coming turn — it is simply delayed by one cycle.
 
-- **Comeback Mechanic**: If a player's Hero Card health is way below the health of the opponent Hero Card, the Judge grants them a **Mercy Roll** — a free reroll of the Action Die only once per game. This gives the losing player a chance to get a favorable action constraint and fight back.
+- **Comeback Mechanic**: If a player's Hero Minion health is way below the health of the opponent Hero Minion, the Judge grants them a **Mercy Roll** — a free reroll of the Action Die only once per game. This gives the losing player a chance to get a favorable action constraint and fight back.
 
 - **Ranked**: Destiny has its own separate ranked ladder. Because of variance, rating changes are dampened: wins give slightly less rating and losses deduct slightly less, making the ladder a longer but fairer grind.
 
@@ -138,7 +138,7 @@
 - **Unleashing a Ritual**: When a player's Ritual Energy bar reaches a set threshold, they may choose to spend the energy during their turn (before or after other actions) to cast a **Spell**, automatically damaging the opponent's Soul Vessel. Each player can only cast one Ritual Spell per turn. Spending energy does not require a mana cost — it is paid entirely from the accumulated Ritual Energy. Energy thresholds and spells:
   - **Minor Ritual (8 energy)** — *Bloodbind*: Restore your Soul Vessel's health by 6. | *Ashen Strike*: Deal 4 damage to any target (including the enemy Soul Vessel).
   - **Moderate Ritual (16 energy)** — *Soul Harvest*: Draw 3 cards. | *Purge*: Destroy any one enemy minion outright. | *Rebirth*: Ressurect one random defeated card from the Graveyard back to the board.
-  - **Major Ritual (24 energy)** — *Dark Convergence*: Deal 3 damage to all enemy minions and the opponent's Soul Vessel. | *Summon from the Deep*: Summon a random Rare card from outside the game onto your side of the board.
+  - **Major Ritual (24 energy)** — *Dark Convergence*: Deal 3 damage to all enemy minions | *Summon from the Deep*: Summon a random Rare card from outside the game onto your side of the board.
   - **Grand Ritual (32 energy)** — *Annihilation*: Destroy all minions on the board. | *Necromancy Curse*: Resurrect all your destroyed minions as 1/1 copies (stats reset, abilities kept).
 
 - **Spell Powers**: Ritual Spells damage the enemy Soul Vessel by approximately one third of it's energy cost, so: Minor Rituals - 3 damage; Moderate Rituals - 6 damage; Major Rituals - 8 damage; Grand Rituals - 10 damage.

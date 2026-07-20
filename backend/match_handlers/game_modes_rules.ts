@@ -1,4 +1,4 @@
-import { MatchObject, MatchPlayer, MoveRequest, GameMode, MoveAction, RitualSpellNames } from './types'
+import { MatchObject, MatchPlayer, MoveRequest, GameMode, MoveAction, RitualSpellName } from './types'
 
 type ValidationResult = { ok: true } | { ok: false, message: string }
 type Validator = (match: MatchObject, player: MatchPlayer, request: MoveRequest) => ValidationResult
@@ -6,7 +6,7 @@ type Validator = (match: MatchObject, player: MatchPlayer, request: MoveRequest)
 const pass: ValidationResult = { ok: true }
 const fail = (message: string): ValidationResult => ({ ok: false, message: message })
 
-const ritualSpellCosts: Record<RitualSpellNames, number> = {
+const RITUAL_SPELL_COSTS: Record<RitualSpellName, number> = {
     bloodbind: 8, ashen_strike: 8,
     soul_harvest: 16, purge: 16, rebirth: 16,
     dark_convergence: 24, summon_from_deep: 24,
@@ -29,10 +29,11 @@ const cardInHand: Validator = (match, player, request) => {
 
 const hasMana: Validator = (match, player, request) => {
     const card = player.hand_cards.find(card => card.uuid === request.card_uuid)
+    const cardManaCost = card.mana_cost - (match.action_die === 2 ? 1 : 0)
 
     if (!card) return fail('Card not found')
 
-    return player.mana_level >= card.mana_cost ? pass : fail(`Not enough mana (need ${card.mana_cost}, have ${player.mana_level})`)
+    return player.mana_level >= cardManaCost ? pass : fail(`Not enough mana (need ${cardManaCost}, have ${player.mana_level})`)
 }
 
 
@@ -83,68 +84,94 @@ const defensiveMustBeTargetedFirst: Validator = (match, player, request) => {
 
 
 const opponentHasLifePool: Validator = (match, player, request) => {
-    const opponent = match.players.find(p => p.id !== player.id)
+    const opponent = match.players.find(playerToTest => playerToTest.id !== player.id)
     return opponent.life_pool !== undefined ? pass : fail('No life pool to attack in this mode')
 }
 
 
 
 const cardCanBeSacrificed: Validator = (match, player, request) => {
-    const card = player.hand_cards.find(c => c.uuid === request.card_uuid)
+    const card = player.hand_cards.find(card => card.uuid === request.card_uuid)
     if (!card) return fail('Card not found in hand')
     return card.mana_cost > 0 ? pass : fail('Cards with 0 mana cost cannot be sacrificed')
 }
 
 
 
-const canCastRitualSpell: Validator = (match, player, request) => {
-    const spell = request.spell_name
-    if (!spell) return fail('No spell name specified')
-    const cost = ritualSpellCosts[spell]
-    if (!cost) return fail(`Unknown ritual spell: "${spell}"`)
-    const energy = player.ritual_energy ?? 0
-    return energy >= cost ? pass : fail(`Not enough Ritual Energy (need ${cost}, have ${energy})`)
+const ritualEnergyIsFull: Validator = (match, player, request) => {
+    return player.ritual_energy < 32 ? pass : fail('Your ritual energy level is already full')
+}
+
+
+
+const hasMinimumEnergy: Validator = (match, player, request) => {
+    return player.ritual_energy >= 8 ? pass : fail('You need an energy level of at least 8 to cast a spell')
 }
 
 
 
 const cardInHandForHeroSelection: Validator = (match, player, request) => {
     if (!request.card_uuid) return fail('No card specified')
-    return player.hand_cards.some(c => c.uuid === request.card_uuid) ? pass : fail('Card not found in your hand')
+    return player.hand_cards.some(card => card.uuid === request.card_uuid) ? pass : fail('Card not found in your hand')
+}
+
+
+
+const onlyOneCardConstraint: Validator = (match, player, request) => {
+    return !match.one_card_constraint_used ? pass : fail('The Action Die is allowing to throw only one minion')
+}
+
+
+
+const belowThreeAttackConstraint: Validator = (match, player, request) => {
+    const card = player.table_cards.find(card => card.uuid === request.card_uuid)
+
+    if (match.action_die === 3) {
+        card.attack_damage >= 3 ? pass : fail('The Action Die is allowing to only attack with minions with 3 or higher attack value')
+    }
+    else {
+        return pass
+    }
+}
+
+
+
+const skipAttacksConstraint: Validator = (match, player, request) => {
+    return match.action_die !== 6 ? pass : fail('The Action Die is not allowing to attack enemies')
 }
 
 // main dispatch
 
 const rules: Partial<Record<`${GameMode}:${MoveAction}`, Validator[]>> = {
-    'classic:throw_onto_table':  [isTurn, cardInHand, hasMana, boardLimit(7)],
-    'classic:attack_minion':       [isTurn, attackerOnBoard, attackerCanAttack, hasTargetUuid, targetExistsOnOpponentBoard, defensiveMustBeTargetedFirst],
-    'classic:end_turn':          [isTurn],
-    'classic:choose_hero_minion':  [cardInHandForHeroSelection],
+    'classic:throw_onto_table': [isTurn, cardInHand, hasMana, boardLimit(7)],
+    'classic:attack_minion': [isTurn, attackerOnBoard, attackerCanAttack, hasTargetUuid, targetExistsOnOpponentBoard, defensiveMustBeTargetedFirst],
+    'classic:end_turn': [isTurn],
+    'classic:choose_hero_minion': [cardInHandForHeroSelection],
 
-    'destiny:throw_onto_table':  [isTurn, cardInHand, hasMana, boardLimit(7)],
-    'destiny:attack_minion':       [isTurn, attackerOnBoard, attackerCanAttack, hasTargetUuid, targetExistsOnOpponentBoard, defensiveMustBeTargetedFirst],
-    'destiny:end_turn':          [isTurn],
-    'destiny:choose_hero_minion':  [cardInHandForHeroSelection],
+    'destiny:throw_onto_table': [isTurn, cardInHand, hasMana, onlyOneCardConstraint, boardLimit(7)],
+    'destiny:attack_minion': [isTurn, attackerOnBoard, attackerCanAttack, hasTargetUuid, targetExistsOnOpponentBoard, skipAttacksConstraint, belowThreeAttackConstraint, defensiveMustBeTargetedFirst],
+    'destiny:end_turn': [isTurn],
+    'destiny:choose_hero_minion': [cardInHandForHeroSelection],
 
-    'chaos:throw_onto_table':    [isTurn, cardInHand, hasMana, boardLimit(6)],
-    'chaos:attack_minion':         [isTurn, attackerOnBoard, attackerCanAttack, hasTargetUuid, targetExistsOnOpponentBoard],
-    'chaos:end_turn':            [isTurn],
+    'chaos:throw_onto_table': [isTurn, cardInHand, hasMana, boardLimit(6)],
+    'chaos:attack_minion': [isTurn, attackerOnBoard, attackerCanAttack, hasTargetUuid, targetExistsOnOpponentBoard],
+    'chaos:end_turn': [isTurn],
 
-    'ritual:throw_onto_table':   [isTurn, cardInHand, hasMana, boardLimit(8)],
-    'ritual:attack_minion':        [isTurn, attackerOnBoard, attackerCanAttack, hasTargetUuid, targetExistsOnOpponentBoard, defensiveMustBeTargetedFirst],
-    'ritual:end_turn':           [isTurn],
-    'ritual:sacrifice_card':     [isTurn, cardInHand, cardCanBeSacrificed],
-    'ritual:cast_ritual_spell':  [isTurn, canCastRitualSpell],
+    'ritual:throw_onto_table': [isTurn, cardInHand, hasMana, boardLimit(8)],
+    'ritual:attack_minion': [isTurn, attackerOnBoard, attackerCanAttack, hasTargetUuid, targetExistsOnOpponentBoard, defensiveMustBeTargetedFirst],
+    'ritual:end_turn': [isTurn],
+    'ritual:sacrifice_card': [isTurn, cardInHand, cardCanBeSacrificed, ritualEnergyIsFull],
+    'ritual:cast_ritual_spell': [isTurn, hasMinimumEnergy],
 
     'dungeon_run:throw_onto_table': [isTurn, cardInHand, hasMana, boardLimit(7)],
-    'dungeon_run:attack_minion':      [isTurn, attackerOnBoard, attackerCanAttack, hasTargetUuid, targetExistsOnOpponentBoard, defensiveMustBeTargetedFirst],
-    'dungeon_run:end_turn':         [isTurn],
+    'dungeon_run:attack_minion': [isTurn, attackerOnBoard, attackerCanAttack, hasTargetUuid, targetExistsOnOpponentBoard, defensiveMustBeTargetedFirst],
+    'dungeon_run:end_turn': [isTurn],
     'dungeon_run:choose_hero_minion': [cardInHandForHeroSelection],
 
-    'eclipse:throw_onto_table':  [isTurn, cardInHand, hasMana, boardLimit(7)],
-    'eclipse:attack_minion':       [isTurn, attackerOnBoard, attackerCanAttack, hasTargetUuid, targetExistsOnOpponentBoard],
-    'eclipse:attack_life_pool':  [isTurn, attackerOnBoard, attackerCanAttack, opponentHasLifePool],
-    'eclipse:end_turn':          [isTurn],
+    'eclipse:throw_onto_table': [isTurn, cardInHand, hasMana, boardLimit(7)],
+    'eclipse:attack_minion': [isTurn, attackerOnBoard, attackerCanAttack, hasTargetUuid, targetExistsOnOpponentBoard],
+    'eclipse:attack_life_pool': [isTurn, attackerOnBoard, attackerCanAttack, opponentHasLifePool, defensiveMustBeTargetedFirst],
+    'eclipse:end_turn': [isTurn],
 }
 
 

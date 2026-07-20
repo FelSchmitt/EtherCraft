@@ -10,7 +10,7 @@ export type CardRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' |
 
 
 
-export type RitualSpellNames = 'bloodbind' | 'ashen_strike' | 'soul_harvest' | 'purge' | 'rebirth' |
+export type RitualSpellName = 'bloodbind' | 'ashen_strike' | 'soul_harvest' | 'purge' | 'rebirth' |
 'dark_convergence' | 'summon_from_deep' | 'annihilation' | 'necromancy_curse'
 
 
@@ -21,7 +21,7 @@ export type GameCard = {
     mana_cost: number
     life: number
     life_modifiers: number[]
-    swapped_life?: number
+    swapped_life?: { value: number, enemy_uuid: string }
     max_life: number
     attack_damage: number
     attack_modifiers: number[]
@@ -32,6 +32,7 @@ export type GameCard = {
     is_hero?: boolean
     is_master?: boolean
     is_defense?: boolean
+    owner_id?: string
 }
 
 
@@ -72,11 +73,12 @@ export type MatchObject = {
     winner_id?: string
     both_players_lost?: boolean
 
-    action_die?: number | null
-    fate_die?: number | null
+    action_die?: number
+    fate_die?: number
     mercy_roll_used?: boolean
     reversal_coin?: boolean
     reversal_coin_counter?: number
+    one_card_constraint_used?: boolean
 
     eclipse_timer?: number
     eclipse_active?: boolean
@@ -101,7 +103,6 @@ export type MoveRequest = {
     target_uuid?: string
     mode: GameMode
     action: MoveAction
-    spell_name?: string
 }
 
 
