@@ -50,7 +50,12 @@ const RITUAL_SPELL_ACTIONS: EventEmitter[][] = [
             })
 
             for (const card of ressurectedCards) {
-                if (card) requestingPlayer.hand_cards.push(card)
+                if (card) {
+                    card.life = card.base_life
+                    card.attack_modifiers = []
+                    card.life_modifiers = []
+                    requestingPlayer.hand_cards.push(card)
+                }
             }
         },
     ],
@@ -78,7 +83,7 @@ const RITUAL_SPELL_ACTIONS: EventEmitter[][] = [
         (match, queue, requestingPlayer, request) => {// purge (destroy every enemy minion)
             const opponent = match.players.find(player => player !== requestingPlayer) as MatchPlayer
 
-            for (const card of opponent.table_cards) { card.life = 0; card.life_modifiers = [] }
+            for (const minion of opponent.table_cards) { minion.life = 0; minion.life_modifiers = [] }
         },
 
         (match, queue, requestingPlayer, request) => {// rebirth (ressurect a random defeated minion)
@@ -111,29 +116,43 @@ const RITUAL_SPELL_ACTIONS: EventEmitter[][] = [
     ],
 ]
 
+function damageSoulVesselAndDepleteEnergy(player: MatchPlayer, opponent: MatchPlayer, energyAmount: number, damageAmount: number) {
+    (player.ritual_energy as number) -= energyAmount;
+    (opponent.soul_vessel_life as number) -= damageAmount
+}
+
 
 
 
 
 
 const triggerAbilities: EventEmitter = (match, queue, requestingPlayer, request) => {
-    queue.forEach(event => {
-    })
 }
 
 
 
 const endTurnAndStartNext: EventEmitter = (match, queue, requestingPlayer, request) => {
-    for (const card of requestingPlayer.table_cards) {
-        card.can_attack = true
+    for (const minion of requestingPlayer.table_cards) {
+        minion.can_attack = true
     }
 
     match.current_turn_player = match.current_turn_player === 0 ? 1 : 0
 
     const player = match.players[match.current_turn_player]
 
-    player.mana_capacity < 12 && (player.mana_capacity += 1)
+    if (player.mana_capacity < 12 && !match.eclipse_active) {
+        player.mana_capacity += 1
+    }
+
     player.mana_level = player.mana_capacity
+
+    match.total_turns_count += 1
+
+    if (match.eclipse_active) {
+        for (const player of match.players) {
+            (player.life_pool as number) -= (player.table_cards.length > 0 ? 2 : 3)
+        }
+    }
 }
 
 
@@ -142,13 +161,18 @@ const throwCardOnTable: EventEmitter = (match, queue, requestingPlayer, request)
     const card = requestingPlayer.hand_cards.find(card => card.uuid === request.card_uuid) as GameCard
     const cardManaCost = card.mana_cost - (match.action_die === 2 ? 1 : 0)
 
-    requestingPlayer.table_cards.push(card)
-    requestingPlayer.hand_cards.splice(requestingPlayer.hand_cards.indexOf(card), 1)
-    requestingPlayer.mana_level -= cardManaCost
-
     if (match.mode === 'destiny' && match.action_die === 1) {
         match.one_card_constraint_used = true
     }
+
+    if (match.mode === 'eclipse' && match.eclipse_active) {
+        card.attack_modifiers.push({ value: card.attack_damage, source: 'eclipse_phase' })
+        card.life_modifiers.push({ value: card.life, source: 'eclipse_phase' })
+    }
+
+    requestingPlayer.table_cards.push(card)
+    requestingPlayer.hand_cards.splice(requestingPlayer.hand_cards.indexOf(card), 1)
+    requestingPlayer.mana_level -= cardManaCost
 }
 
 
@@ -158,7 +182,7 @@ const attackMinion: EventEmitter = (match, queue, requestingPlayer, request) => 
     const attacker = requestingPlayer.table_cards.find(card => card.uuid === request.card_uuid) as GameCard
     const target = opponent.table_cards.find(card => card.uuid === request.target_uuid) as GameCard
 
-    target.life -= attacker.attack_damage + attacker.attack_modifiers.reduce((total, current) => total + current, 0)
+    target.life -= attacker.attack_damage + attacker.attack_modifiers.reduce((total, modifier) => total + modifier.value, 0)
     attacker.can_attack = false
 }
 
@@ -238,8 +262,8 @@ const applyChaosEffects: EventEmitter = (match, queue, requestingPlayer, request
 
 const removeDeadMinions: EventEmitter = (match, queue, requestingPlayer, request) => {
     match.players.forEach(player => {
-        player.table_cards.forEach((card, index) => {
-            if (card.life + card.life_modifiers.reduce((total, current) => total + current, 0) <= 0) {
+        player.table_cards.forEach((minion, index) => {
+            if (minion.life + minion.life_modifiers.reduce((total, modifier) => total + modifier.value, 0) <= 0) {
                 match.graveyard.push(...player.table_cards.splice(index, 1))
             }
         })
@@ -359,17 +383,19 @@ const destinyTurns: EventEmitter = (match, queue, requestingPlayer, request) => 
 
     player.mana_capacity < 12 && (player.mana_capacity += 1)
     player.mana_level = player.mana_capacity
+
+    match.total_turns_count += 1
 }
 
 
 
 const sacrificeCard: EventEmitter = (match, queue, requestingPlayer, request) => {
-    const card = requestingPlayer.hand_cards.find(card => card.uuid === request.card_uuid) as GameCard
+    const minion = requestingPlayer.hand_cards.find(card => card.uuid === request.card_uuid) as GameCard
 
     if (requestingPlayer.ritual_energy) {
-        requestingPlayer.ritual_energy += card.mana_cost
+        requestingPlayer.ritual_energy += minion.mana_cost
 
-        requestingPlayer.hand_cards.splice(requestingPlayer.hand_cards.indexOf(card), 1)
+        requestingPlayer.hand_cards.splice(requestingPlayer.hand_cards.indexOf(minion), 1)
 
         requestingPlayer.ritual_energy > 32 && (requestingPlayer.ritual_energy = 32)
     }
@@ -379,37 +405,96 @@ const sacrificeCard: EventEmitter = (match, queue, requestingPlayer, request) =>
 
 const castRitualSpell: EventEmitter = (match, queue, requestingPlayer, request) => {
     const energy = requestingPlayer.ritual_energy as number
+    const opponent = match.players.find(player => player !== requestingPlayer) as MatchPlayer
 
     if (energy >= 32) {
         const randomIndex = Math.round(Math.random())
 
-        RITUAL_SPELL_ACTIONS[0][randomIndex](match, queue, requestingPlayer, request);
+        RITUAL_SPELL_ACTIONS[0][randomIndex](match, queue, requestingPlayer, request)
 
-        (requestingPlayer.ritual_energy as number) -= 32
+        damageSoulVesselAndDepleteEnergy(requestingPlayer, opponent, 32, 10)
     }
 
     else if (energy >= 24) {
         const randomIndex = Math.round(Math.random())
 
-        RITUAL_SPELL_ACTIONS[1][randomIndex](match, queue, requestingPlayer, request);
+        RITUAL_SPELL_ACTIONS[1][randomIndex](match, queue, requestingPlayer, request)
 
-        (requestingPlayer.ritual_energy as number) -= 24
+        damageSoulVesselAndDepleteEnergy(requestingPlayer, opponent, 24, 8)
     }
 
     else if (energy >= 16) {
         const randomIndex = Math.floor(Math.random() * 3)
 
-        RITUAL_SPELL_ACTIONS[2][randomIndex](match, queue, requestingPlayer, request);
+        RITUAL_SPELL_ACTIONS[2][randomIndex](match, queue, requestingPlayer, request)
 
-        (requestingPlayer.ritual_energy as number) -= 16
+        damageSoulVesselAndDepleteEnergy(requestingPlayer, opponent, 16, 6)
     }
 
     else if (energy >= 8) {
         const randomIndex = Math.round(Math.random())
 
-        RITUAL_SPELL_ACTIONS[3][randomIndex](match, queue, requestingPlayer, request);
+        RITUAL_SPELL_ACTIONS[3][randomIndex](match, queue, requestingPlayer, request)
 
-        (requestingPlayer.ritual_energy as number) -= 8
+        damageSoulVesselAndDepleteEnergy(requestingPlayer, opponent, 8, 3)
+    }
+}
+
+
+
+const attackLifePool: EventEmitter = (match, queue, requestingPlayer, request) => {
+    const opponent = match.players.find(player => player !== requestingPlayer) as MatchPlayer
+    const minion = requestingPlayer.table_cards.find(card => card.uuid === request.card_uuid) as GameCard
+
+    (opponent.life_pool as number) -= (minion.attack_damage + minion.attack_modifiers.reduce((total, modifier) => total + modifier.value, 0))
+}
+
+
+
+const updateEclipseTimer: EventEmitter = (match, queue, requestingPlayer, request) => {
+    if ((match.eclipse_timer as number) > 0) {
+        (match.eclipse_timer as number) -= 1
+
+        if ((match.eclipse_timer as number) <= 0) {
+            match.eclipse_active = true
+
+            for (const player of match.players) {
+                player.table_cards.length === 0 && ((player.life_pool as number) -= 4)
+
+                for (const minion of player.table_cards) {
+                    minion.attack_modifiers.push({ value: minion.attack_damage, source: 'eclipse_phase' })
+                    minion.life_modifiers.push({ value: minion.life, source: 'eclipse_phase' })
+                }
+            }
+        }
+    }
+}
+
+
+
+const resetEclipseTimer: EventEmitter = (match, queue, requestingPlayer, request) => {
+    const opponent = match.players.find(player => player !== requestingPlayer) as MatchPlayer
+
+    if (opponent.table_cards.length === 0) {
+        match.eclipse_active = false
+
+        if ((match.eclipse_current_max_count as number) > 2) {
+            (match.eclipse_current_max_count as number) -= 2
+        }
+
+        (match.eclipse_timer as number) = (match.eclipse_current_max_count as number)
+
+        for (const player of match.players) {
+            for (const minion of player.table_cards) {
+                minion.attack_modifiers.forEach((modifier, index) => {
+                    modifier.source === 'eclipse_phase' && minion.attack_modifiers.splice(index, 1)
+                })
+
+                minion.life_modifiers.forEach((modifier, index) => {
+                    modifier.source === 'eclipse_phase' && minion.life_modifiers.splice(index, 1)
+                })
+            }
+        }
     }
 }
 
@@ -442,9 +527,9 @@ const moveEvents: Partial<Record<`${GameMode}:${MoveAction}`, EventEmitter[]>> =
     'dungeon_run:choose_hero_minion': [setHeroMinion],
 
     'eclipse:throw_onto_table': [throwCardOnTable],
-    'eclipse:attack_minion': [attackMinion, removeDeadMinions, checkForWinnerByDepletedLifePool],
-    'eclipse:attack_life_pool': [],
-    'eclipse:end_turn': [],
+    'eclipse:attack_minion': [attackMinion, removeDeadMinions, resetEclipseTimer],
+    'eclipse:attack_life_pool': [attackLifePool, checkForWinnerByDepletedLifePool],
+    'eclipse:end_turn': [updateEclipseTimer],
 }
 
 // main dispatch

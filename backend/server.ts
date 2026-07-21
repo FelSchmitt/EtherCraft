@@ -191,7 +191,7 @@ function createMatch(
     if (mode === 'eclipse') {
         base.eclipse_timer = 12
         base.eclipse_active = false
-        base.eclipse_reset_count = 0
+        base.eclipse_current_max_count = 0
     }
 
     if (mode === 'chaos') {
@@ -239,13 +239,13 @@ socketServer.on('connection', (client: Socket) => {
             const uuids = await Promise.all(Array.from({ length: 6 }, () => generateCardUuid()))
 
             const starterCards = [
-                { card_id: 'giant_serpent', mana_cost: 1, life: 5, max_life: 5, attack_damage: 3, classes: ['beast'], abilities: [], rarity: 'common' as CardRarity },
-                { card_id: 'wendigo', mana_cost: 1, life: 4, max_life: 4, attack_damage: 2, classes: ['undead'], abilities: [], rarity: 'common' as CardRarity },
-                { card_id: 'shadow_demon', mana_cost: 2, life: 5, max_life: 5, attack_damage: 3, classes: ['spectral'], abilities: [], rarity: 'rare' as CardRarity },
+                { card_id: 'giant_serpent', mana_cost: 1, base_life: 5, attack_damage: 3, classes: ['beast'], abilities: [], rarity: 'common' as CardRarity },
+                { card_id: 'wendigo', mana_cost: 1, base_life: 4, attack_damage: 2, classes: ['undead'], abilities: [], rarity: 'common' as CardRarity },
+                { card_id: 'shadow_demon', mana_cost: 2, base_life: 5, attack_damage: 3, classes: ['spectral'], abilities: [], rarity: 'rare' as CardRarity },
             ]
 
             const handsCards = playersIds.map((player, index) =>
-                starterCards.map((card, cardIndex) => ({ ...card, uuid: uuids[index * 3 + cardIndex], can_attack: false, life_modifiers: [], attack_modifiers: [] }))
+                starterCards.map((card, cardIndex) => ({ ...card, uuid: uuids[index * 3 + cardIndex], can_attack: false, life_modifiers: [], attack_modifiers: [], life: card.base_life }))
             )
 
             const match = createMatch(mode, playersIds, handsCards, matchId)

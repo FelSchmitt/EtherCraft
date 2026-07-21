@@ -20,11 +20,11 @@ export type GameCard = {
     uuid: string
     mana_cost: number
     life: number
-    life_modifiers: number[]
+    life_modifiers: { value: number, source: string }[]
     swapped_life?: { value: number, enemy_uuid: string }
-    max_life: number
+    base_life: number
     attack_damage: number
-    attack_modifiers: number[]
+    attack_modifiers: { value: number, source: string }[]
     can_attack: boolean
     classes: string[]
     abilities: CardAbility[]
@@ -82,8 +82,7 @@ export type MatchObject = {
 
     eclipse_timer?: number
     eclipse_active?: boolean
-    eclipse_reset_count?: number
-    mana_cap_at_eclipse?: number
+    eclipse_current_max_count?: number
 
     chaos_deck?: ChaosEffectName[]
     current_chaos_effect?: ChaosEffectName | null
@@ -94,7 +93,7 @@ export type MatchObject = {
 
 
 export type MoveAction = 'throw_onto_table' | 'attack_minion' | 'attack_life_pool' |
-'end_turn' | 'sacrifice_card' | 'cast_ritual_spell' | 'choose_hero_minion'
+    'end_turn' | 'sacrifice_card' | 'cast_ritual_spell' | 'choose_hero_minion'
 
 
 
