@@ -1,4 +1,5 @@
 import { MatchObject, MatchPlayer, MoveRequest, GameMode, MoveAction, RitualSpellName } from './types'
+import { ACTION_DIE_LESS_MANA_COST, ACTION_DIE_MANA_DISCOUNT, MINOR_RITUAL_ENERGY_THRESHOLD } from './events_queue'
 
 type ValidationResult = { ok: true } | { ok: false, message: string }
 type Validator = (match: MatchObject, player: MatchPlayer, request: MoveRequest) => ValidationResult
@@ -6,12 +7,18 @@ type Validator = (match: MatchObject, player: MatchPlayer, request: MoveRequest)
 const pass: ValidationResult = { ok: true }
 const fail = (message: string): ValidationResult => ({ ok: false, message: message })
 
+
+
 const RITUAL_SPELL_COSTS: Record<RitualSpellName, number> = {
     bloodbind: 8, ashen_strike: 8,
     soul_harvest: 16, purge: 16, rebirth: 16,
     dark_convergence: 24, summon_from_deep: 24,
     annihilation: 32, necromancy_curse: 32
 }
+
+const ACTION_DIE_SKIP_ATTACKS = 6
+const ACTION_DIE_MINIMUM_ATTACK = 3
+const ACTION_DIE_MINIMUM_ATTACK_VALUE = 3
 
 
 
@@ -29,7 +36,7 @@ const cardInHand: Validator = (match, player, request) => {
 
 const hasMana: Validator = (match, player, request) => {
     const card = player.hand_cards.find(card => card.uuid === request.card_uuid)
-    const cardManaCost = card.mana_cost - (match.action_die === 2 ? 1 : 0)
+    const cardManaCost = card.mana_cost - (match.action_die === ACTION_DIE_LESS_MANA_COST ? ACTION_DIE_MANA_DISCOUNT : 0)
 
     if (!card) return fail('Card not found')
 
@@ -105,7 +112,7 @@ const ritualEnergyIsFull: Validator = (match, player, request) => {
 
 
 const hasMinimumEnergy: Validator = (match, player, request) => {
-    return player.ritual_energy >= 8 ? pass : fail('You need an energy level of at least 8 to cast a spell')
+    return player.ritual_energy >= MINOR_RITUAL_ENERGY_THRESHOLD ? pass : fail(`You need an energy level of at least ${MINOR_RITUAL_ENERGY_THRESHOLD} to cast a spell`)
 }
 
 
@@ -126,8 +133,8 @@ const onlyOneCardConstraint: Validator = (match, player, request) => {
 const belowThreeAttackConstraint: Validator = (match, player, request) => {
     const card = player.table_cards.find(card => card.uuid === request.card_uuid)
 
-    if (match.action_die === 3) {
-        card.attack_damage >= 3 ? pass : fail('The Action Die is allowing to only attack with minions with 3 or higher attack value')
+    if (match.action_die === ACTION_DIE_MINIMUM_ATTACK) {
+        card.attack_damage >= ACTION_DIE_MINIMUM_ATTACK_VALUE ? pass : fail(`The Action Die is allowing only minions with ${ACTION_DIE_MINIMUM_ATTACK_VALUE} or higher damage to attack`)
     }
     else {
         return pass
@@ -137,7 +144,7 @@ const belowThreeAttackConstraint: Validator = (match, player, request) => {
 
 
 const skipAttacksConstraint: Validator = (match, player, request) => {
-    return match.action_die !== 6 ? pass : fail('The Action Die is not allowing to attack enemies')
+    return match.action_die !== ACTION_DIE_SKIP_ATTACKS ? pass : fail('The Action Die is not allowing to attack enemies')
 }
 
 // main dispatch

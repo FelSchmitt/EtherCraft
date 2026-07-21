@@ -173,7 +173,7 @@
   - All minions currently on the board (and any summoned afterward) have their attack and health doubled.
   - At the end of every player's turn, both Life Pools take 2 unavoidable damage.
   - Mana capacity is locked at whatever value it reached when the Eclipse triggered — it no longer grows.
-  - Any player who enters the Eclipse Phase with **no minions on the board** loses 4 additional health immediately, and every subsequent turn they spend with an empty board costs them 3 extra health on top of the standard 2.
+  - Any player who enters the Eclipse Phase with **no minions on the board** loses 4 additional health immediately, and every subsequent turn they spend with an empty board costs them 3 extra health instead of the standard 2.
 
 - **Resetting the Timer**: A player can delay the Eclipse by destroying **all** enemy minions in a single turn (using attacks, spells via card abilities, or any combination). If they do, the Eclipse Timer resets to **10 turns** (not the original 12). The timer can be reset multiple times, but each reset gives 2 less turns until a minimum of 2 turns, creating escalating pressure.
 

@@ -79,13 +79,15 @@ export type MatchObject = {
     reversal_coin?: boolean
     reversal_coin_counter?: number
     one_card_constraint_used?: boolean
+    chain_attack_damage_used?: boolean
+    double_damage_bonus_used?: boolean
 
     eclipse_timer?: number
     eclipse_active?: boolean
     eclipse_current_max_count?: number
 
     chaos_deck?: ChaosEffectName[]
-    current_chaos_effect?: ChaosEffectName | null
+    current_chaos_effects?: ChaosEffectName[]
     chaos_deck_exhausted_count?: number
     chaos_draws_per_turn?: number
 }
