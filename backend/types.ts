@@ -2,6 +2,7 @@ export type playerIdentifiers = {
     id: string
     socket_id: string
     nickname: string
+    mode?: GameMode
 }
 
 

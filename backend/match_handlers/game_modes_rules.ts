@@ -1,4 +1,4 @@
-import { MatchObject, MatchPlayer, MoveRequest, GameMode, MoveAction, RitualSpellName } from './types'
+import { MatchObject, MatchPlayer, MoveRequest, GameMode, MoveAction, RitualSpellName } from '../types'
 import { ACTION_DIE_LESS_MANA_COST, ACTION_DIE_MANA_DISCOUNT, MINOR_RITUAL_ENERGY_THRESHOLD } from './events_queue'
 
 type ValidationResult = { ok: true } | { ok: false, message: string }

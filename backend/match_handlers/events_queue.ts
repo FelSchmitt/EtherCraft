@@ -1,4 +1,4 @@
-import { MatchObject, MatchPlayer, MoveRequest, GameMode, MoveAction, GameCard, ChaosEffectName } from './types'
+import { MatchObject, MatchPlayer, MoveRequest, GameMode, MoveAction, GameCard, ChaosEffectName } from '../types'
 
 export type GeneratedEvent = {
     matchProperty: keyof MatchObject
@@ -187,7 +187,7 @@ const endTurnAndStartNext: EventEmitter = (match, queue, requestingPlayer, reque
 
     if (match.eclipse_active) {
         for (const player of match.players) {
-            (player.life_pool as number) -= (player.table_cards.length > 0 ? 2 : 3)
+            (player.life_pool as number) -= (player.table_cards.length > 0 ? ECLIPSE_PHASE_DAMAGE : ECLIPSE_PHASE_EMPTY_BOARD_DAMAGE)
         }
     }
 }

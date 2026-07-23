@@ -1,4 +1,4 @@
-import { MatchObject, MatchPlayer, MoveRequest } from './types'
+import { MatchObject, MatchPlayer, MoveRequest } from '../types'
 import { validateAction } from './game_modes_rules'
 
 
