@@ -20,9 +20,8 @@ async function updateMatch(match: MatchObject, redisConnection: RedisClientType)
 }
 
 function broadcastMatchState(match: MatchObject, socketServer: Server): void {
-    for (const player of match.players) {
-        socketServer.to(player.socket_id).emit('match_state', 'something')
-    }
+    socketServer.to(match.player1.socket_id).emit('match_state', match)
+    socketServer.to(match.player2.socket_id).emit('match_state', match)
 }
 
 function createMatch(playersIds: playerIdentifiers[], handCards: GameCard[][], matchId: string): MatchObject {
@@ -46,8 +45,9 @@ function createMatch(playersIds: playerIdentifiers[], handCards: GameCard[][], m
     const base: MatchObject = {
         match_id: matchId,
         mode,
-        players: players,
-        current_turn_player: Math.round(Math.random()) as 0 | 1,
+        player1: players[0],
+        player2: players[1],
+        current_turn_player: (['player1', 'player2'][Math.round(Math.random())]) as 'player1' | 'player2',
         start_time: new Date().toISOString(),
         total_turns_count: 0,
         graveyard: []
@@ -127,8 +127,9 @@ export async function moveRequest(request: MoveRequest, socketServer: Server, cl
             return
         }
 
-        const player = match.players.find(player => player.socket_id === client.id)
-        const result = executeAction(match, player, request)
+        const player = match.player1.socket_id === client.id ? match.player1 : match.player2
+        const opponent = match.player1.socket_id === client.id ? match.player2 : match.player1
+        const result = executeAction(match, player, opponent, request)
 
         if (!result.ok) {
             client.emit('chat', { sender: 'Server', color: '#ffaa00', text: result.message })
@@ -161,6 +162,6 @@ export function clearWaitingQueue(waitingQueue: playerIdentifiers[], socketServe
 export async function getMatch(socketId: string, client: Socket, redisConnection: RedisClientType) {
     const match = await getMatchFromSocketId(socketId, redisConnection)
     if (match) {
-        client.emit('match_data', buildPlayerView(match, match.players.find(p => p.socket_id === client.id).id))
+        client.emit('match_data', match)
     }
 }

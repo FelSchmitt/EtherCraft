@@ -159,7 +159,7 @@ async function initServer(): Promise<void> {
     try {
         await redisClient.ft.create(
             'index:matches',
-            { '$.players[*].socketId': { type: 'TAG', AS: 'sockets_ids' } },
+            { '$.?(player1 || player2).socket_id': { type: 'TAG', AS: 'sockets_ids' } },
             { ON: 'JSON', PREFIX: 'match:' }
         )
     }

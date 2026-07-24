@@ -28,7 +28,7 @@ export type GameCard = {
     attack_modifiers: { value: number, source: string }[]
     can_attack: boolean
     classes: string[]
-    abilities: CardAbility[]
+    abilities: any[]
     rarity: CardRarity
     is_hero?: boolean
     is_master?: boolean
@@ -66,8 +66,9 @@ export type ChaosEffectName = 'earthquake' | 'mass_confusion' | 'blood_moon' | '
 export type MatchObject = {
     match_id: string
     mode: GameMode
-    players: MatchPlayer[]
-    current_turn_player: 0 | 1
+    player1: MatchPlayer
+    player2: MatchPlayer
+    current_turn_player: 'player1' | 'player2'
     start_time: string
     total_turns_count: number
     graveyard: GameCard[]
@@ -105,10 +106,4 @@ export type MoveRequest = {
     target_uuid?: string
     mode: GameMode
     action: MoveAction
-}
-
-
-
-export type CardAbility = {
-    trigger: 'on_play' | 'in_hand' | 'damaged' | 'turn_change'
 }
