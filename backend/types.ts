@@ -12,7 +12,7 @@ export type CardRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' |
 
 
 export type RitualSpellName = 'bloodbind' | 'ashen_strike' | 'soul_harvest' | 'purge' | 'rebirth' |
-'dark_convergence' | 'summon_from_deep' | 'annihilation' | 'necromancy_curse'
+    'dark_convergence' | 'summon_from_deep' | 'annihilation' | 'necromancy_curse'
 
 
 
@@ -20,6 +20,7 @@ export type GameCard = {
     card_id: string
     uuid: string
     mana_cost: number
+    mana_cost_modifiers: { value: number, source: string }[]
     life: number
     life_modifiers: { value: number, source: string }[]
     swapped_life?: { value: number, enemy_uuid: string }
@@ -28,7 +29,7 @@ export type GameCard = {
     attack_modifiers: { value: number, source: string }[]
     can_attack: boolean
     classes: string[]
-    abilities: any[]
+    abilities: {function: Function, trigger: EventResult}[]
     rarity: CardRarity
     is_hero?: boolean
     is_master?: boolean
@@ -107,3 +108,9 @@ export type MoveRequest = {
     mode: GameMode
     action: MoveAction
 }
+
+
+
+export type EventResult = Record<string, any> | 'turn_changed' | 'summoned' | 'died' | 'attacked_minion' | 'damaged' | 'card_drawn'
+    | 'won_match' | 'ability_triggered' | 'chose_hero' | 'chose_card' | 'card_sacrificed' | 'spell_cast' | 'attacked_life_pool'
+    | 'eclipse_began' | 'eclipse_ended' | 'minion_enabled_attack' | 'none'

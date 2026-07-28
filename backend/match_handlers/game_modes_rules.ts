@@ -1,5 +1,5 @@
 import { MatchObject, MatchPlayer, MoveRequest, GameMode, MoveAction, RitualSpellName } from '../types'
-import { ACTION_DIE_LESS_MANA_COST, ACTION_DIE_MANA_DISCOUNT, MINOR_RITUAL_ENERGY_THRESHOLD } from './events_queue'
+import { MINOR_RITUAL_ENERGY_THRESHOLD } from './events_queue'
 
 type ValidationResult = { ok: true } | { ok: false, message: string }
 type Validator = (match: MatchObject, requestingPlayer: MatchPlayer, opponent: MatchPlayer, request: MoveRequest) => ValidationResult
@@ -36,7 +36,7 @@ const cardInHand: Validator = (match, requestingPlayer, opponent, request) => {
 
 const hasMana: Validator = (match, requestingPlayer, opponent, request) => {
     const card = requestingPlayer.hand_cards.find(card => card.uuid === request.card_uuid)
-    const cardManaCost = card.mana_cost - (match.action_die === ACTION_DIE_LESS_MANA_COST ? ACTION_DIE_MANA_DISCOUNT : 0)
+    const cardManaCost = card.mana_cost + card.mana_cost_modifiers.reduce((total, modifier) => total + modifier.value, 0)
 
     if (!card) return fail('Card not found')
 

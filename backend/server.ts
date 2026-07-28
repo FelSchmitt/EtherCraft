@@ -147,7 +147,7 @@ socketServer.on('connection', (client: Socket) => {
     client.on('find_opponent', (ids) => {channels.joinWaitingQueue({id: ids.id, socket_id: client.id, nickname: ids.nickname}, waitingQueue, redisClient, socketServer)})
     client.on('move_request', (request) => {channels.moveRequest(request, socketServer, client, redisClient)})
     client.on('clear_waiting_queue', () => {channels.clearWaitingQueue(waitingQueue, socketServer)})
-    client.on('get_match', () => {channels.getMatch(client.id, client, redisClient)})
+    client.on('get_match', () => {channels.getMatch(client, redisClient)})
 })
 
 
@@ -159,7 +159,7 @@ async function initServer(): Promise<void> {
     try {
         await redisClient.ft.create(
             'index:matches',
-            { '$.?(player1 || player2).socket_id': { type: 'TAG', AS: 'sockets_ids' } },
+            { "$.['player1', 'player2'].socket_id": { type: 'TAG', AS: 'sockets_ids' } },
             { ON: 'JSON', PREFIX: 'match:' }
         )
     }

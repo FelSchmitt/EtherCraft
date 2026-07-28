@@ -7,7 +7,7 @@ login.txt
 **/tests
 *.test.js
 backup.sql
-Card-Ideas.md
+Ideas.md
 
 # duplicated blender projects
 *.blend1

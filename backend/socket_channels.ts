@@ -1,6 +1,6 @@
 import { Server, Socket } from 'socket.io'
-import { RedisClientType } from 'redis'
-import { MatchObject, MoveRequest, playerIdentifiers, GameCard, CardRarity } from './types'
+import { RedisClientType, RedisJSON } from 'redis'
+import { MatchObject, MoveRequest, playerIdentifiers, GameCard, CardRarity, EventResult } from './types'
 import { executeAction, buildPlayerView } from './match_handlers/match_engine'
 
 
@@ -16,7 +16,7 @@ async function getMatchFromSocketId(socketId: string, redisConnection: RedisClie
 }
 
 async function updateMatch(match: MatchObject, redisConnection: RedisClientType): Promise<void> {
-    await redisConnection.json.set(match.match_id, '$', match)
+    await redisConnection.json.set(match.match_id, '$', JSON.stringify(match))
 }
 
 function broadcastMatchState(match: MatchObject, socketServer: Server): void {
@@ -82,6 +82,38 @@ function createMatch(playersIds: playerIdentifiers[], handCards: GameCard[][], m
 
 
 
+const starterCards = [
+    {
+        card_id: 'ironwood_ent',
+        mana_cost: 1,
+        base_life: 5,
+        attack_damage: 2,
+        classes: ['verdant', 'guardian'],
+        abilities: [{function: '', trigger: ''}],
+        rarity: 'uncommon' as CardRarity
+    },
+    {
+        card_id: 'emberveil_assassin',
+        mana_cost: 4,
+        base_life: 5,
+        attack_damage: 2,
+        classes: ['shadow', 'infernal'],
+        abilities: [],
+        rarity: 'epic' as CardRarity
+    },
+    {
+        card_id: 'shadow_demon',
+        mana_cost: 4,
+        base_life: 4,
+        attack_damage: 3,
+        classes: ['spectral', 'underworld'],
+        abilities: [],
+        rarity: 'rare' as CardRarity
+    },
+]
+
+
+
 export function broadcastUserMessage(message: { sender: string, text: string }, socketServer: Server) {
     console.log(`Message from frontend: ${message.text}`)
     socketServer.emit('chat', { sender: message.sender, color: '#1cbe00', text: message.text })
@@ -98,19 +130,29 @@ export async function joinWaitingQueue(identifiers: playerIdentifiers, waitingQu
 
         const uuids = await Promise.all(Array.from({ length: 6 }, () => generateCardUuid(redisConnection)))
 
-        const starterCards = [
-            { card_id: 'giant_serpent', mana_cost: 1, base_life: 5, attack_damage: 3, classes: ['beast'], abilities: [], rarity: 'common' as CardRarity },
-            { card_id: 'wendigo', mana_cost: 1, base_life: 4, attack_damage: 2, classes: ['undead'], abilities: [], rarity: 'common' as CardRarity },
-            { card_id: 'shadow_demon', mana_cost: 2, base_life: 5, attack_damage: 3, classes: ['spectral'], abilities: [], rarity: 'rare' as CardRarity },
-        ]
-
         const handsCards = playersIds.map((player, index) =>
-            starterCards.map((card, cardIndex) => ({ ...card, uuid: uuids[index * 3 + cardIndex], can_attack: false, life_modifiers: [], attack_modifiers: [], life: card.base_life }))
+            starterCards.map((card, cardIndex) => (
+                {
+                    uuid: uuids[index * 3 + cardIndex],
+                    card_id: card.card_id,
+                    mana_cost: card.mana_cost,
+                    base_life: card.base_life,
+                    life: card.base_life,
+                    attack_damage: card.attack_damage,
+                    life_modifiers: [],
+                    attack_modifiers: [],
+                    mana_cost_modifiers: [],
+                    classes: card.classes,
+                    abilities: card.abilities.map(ability => ({function: new Function('match', ability.function), trigger: ability.trigger as EventResult})),
+                    can_attack: false,
+                    rarity: card.rarity,
+                }
+            ))
         )
 
         const match = createMatch(playersIds, handsCards, matchId)
 
-        await redisConnection.json.set(matchId, '$', match)
+        await redisConnection.json.set(matchId, '$', JSON.stringify(match))
 
         socketServer.to([playersIds[0].socket_id, playersIds[1].socket_id]).socketsJoin(matchId)
     }
@@ -159,8 +201,8 @@ export function clearWaitingQueue(waitingQueue: playerIdentifiers[], socketServe
 
 
 
-export async function getMatch(socketId: string, client: Socket, redisConnection: RedisClientType) {
-    const match = await getMatchFromSocketId(socketId, redisConnection)
+export async function getMatch(client: Socket, redisConnection: RedisClientType) {
+    const match = await getMatchFromSocketId(client.id, redisConnection)
     if (match) {
         client.emit('match_data', match)
     }

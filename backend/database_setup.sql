@@ -11,7 +11,7 @@ CREATE TABLE game_cards (
   mana_cost          int          NOT NULL,
   rarity             varchar(10)  NOT NULL,
   classes            varchar(20)[],
-  abilities          jsonb[], -- each entry: { "name": "...", "trigger": "on_play|in_hand|passive", "description": "..." }
+  abilities          jsonb[], -- each entry: { "name": "...", "description": "...", "trigger": "summoned | card_drawn | damaged | turn_changed", "function": "*code as string to execute*", "replace_default_event": false | true }
   geometry_variation decimal(2, 0) -- only to reference one of the 3d models in the frontend for different styles
 );
 
