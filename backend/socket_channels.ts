@@ -89,7 +89,7 @@ const starterCards = [
         base_life: 5,
         attack_damage: 2,
         classes: ['verdant', 'guardian'],
-        abilities: [{function: '', trigger: ''}],
+        abilities: [],
         rarity: 'uncommon' as CardRarity
     },
     {
@@ -128,12 +128,12 @@ export async function joinWaitingQueue(identifiers: playerIdentifiers, waitingQu
         const playersIds = [waitingQueue.shift(), waitingQueue.shift()]
         const matchId = `match:${Date.now()}_${Math.round(Math.random() * 100)}`
 
-        const uuids = await Promise.all(Array.from({ length: 6 }, () => generateCardUuid(redisConnection)))
+        const uuids = await Promise.all(Array.from({ length: starterCards.length * 2 }, () => generateCardUuid(redisConnection)))
 
         const handsCards = playersIds.map((player, index) =>
             starterCards.map((card, cardIndex) => (
                 {
-                    uuid: uuids[index * 3 + cardIndex],
+                    uuid: uuids[index * starterCards.length + cardIndex],
                     card_id: card.card_id,
                     mana_cost: card.mana_cost,
                     base_life: card.base_life,
@@ -143,7 +143,10 @@ export async function joinWaitingQueue(identifiers: playerIdentifiers, waitingQu
                     attack_modifiers: [],
                     mana_cost_modifiers: [],
                     classes: card.classes,
-                    abilities: card.abilities.map(ability => ({function: new Function('match', ability.function), trigger: ability.trigger as EventResult})),
+                    abilities: card.abilities.map(ability => (
+                        { function: new Function('match', 'queue', ability.function), trigger: ability.trigger as EventResult, replace_default_event: ability.replace_default_event }
+                    )),
+                    custom_properties: [],
                     can_attack: false,
                     rarity: card.rarity,
                 }

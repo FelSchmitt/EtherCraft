@@ -23,13 +23,14 @@ export type GameCard = {
     mana_cost_modifiers: { value: number, source: string }[]
     life: number
     life_modifiers: { value: number, source: string }[]
-    swapped_life?: { value: number, enemy_uuid: string }
+    swapped_life?: { value: number, enemy_uuid: string } // used by the 'void rift' chaos effect
     base_life: number
     attack_damage: number
     attack_modifiers: { value: number, source: string }[]
     can_attack: boolean
     classes: string[]
-    abilities: {function: Function, trigger: EventResult}[]
+    abilities: { function: Function, trigger: EventResult, replace_default_event: boolean }[]
+    custom_properties: { persist: boolean, source_card_uuid?: string, properties: any[] }[] // used by the special abilities of itself and other cards
     rarity: CardRarity
     is_hero?: boolean
     is_master?: boolean
@@ -111,6 +112,6 @@ export type MoveRequest = {
 
 
 
-export type EventResult = Record<string, any> | 'turn_changed' | 'summoned' | 'died' | 'attacked_minion' | 'damaged' | 'card_drawn'
-    | 'won_match' | 'ability_triggered' | 'chose_hero' | 'chose_card' | 'card_sacrificed' | 'spell_cast' | 'attacked_life_pool'
-    | 'eclipse_began' | 'eclipse_ended' | 'minion_enabled_attack' | 'none'
+export type EventResult = 'turn_changed' | 'summoned' | 'died' | 'ressurected' | 'attacked_minion'
+    | 'damaged' | 'card_drawn' | 'won_match' | 'ability_triggered' | 'chose_hero' | 'chose_card' | 'dice_and_coin_reset' | 'chaos_effects_applied' | 'card_sacrificed' |
+    'spell_cast' | 'attacked_life_pool' | 'eclipse_began' | 'eclipse_ended' | 'minion_enabled_attack' | 'none'
