@@ -1,18 +1,17 @@
-import { MatchObject, MatchPlayer, MoveRequest, GameMode, MoveAction, GameCard, ChaosEffectName, EventResult, playerIdentifiers } from '../types'
+import { MatchObject, MatchPlayer, MoveRequest, GameMode, MoveAction, GameCard, ChaosEffectName, EventResult } from '../types'
 
 export type GeneratedEvent = {
     eventResult: EventResult
+    function: (...args: any[]) => any
     eventData?: Record<string, any>
     cardUuid?: string
     targetsUuids?: string[]
     player?: 'player1' | 'player2'
     opponent?: 'player1' | 'player2'
     place?: 'hand' | 'table'
-    replaceDefault?: boolean // If true, the function property will alter the match; If false but there is a function, it will execute along with the default event
-    function?: () => any
 }
 
-type EventEmitter = (match: MatchObject, requestingPlayer: MatchPlayer, opponent: MatchPlayer, request: MoveRequest, eventDescriptorOnly?: boolean) => GeneratedEvent[] | void
+type EventEmitter = (match: MatchObject, requestingPlayer: MatchPlayer, opponent: MatchPlayer, request: MoveRequest, descriptorOnly?: boolean, event?: GeneratedEvent) => GeneratedEvent[]
 
 // per-mode constants
 const DEFAULT_MANA_INCREASE = 1
@@ -75,6 +74,8 @@ const RITUAL_SPELL_ACTIONS: EventEmitter[][] = [
                 card.life_modifiers = []
                 card.life = 0
             }
+
+            return []
         },
 
         (match, requestingPlayer, opponent, request) => {// necromancy curse (ressurect all defeated minions back to hand)
@@ -91,6 +92,8 @@ const RITUAL_SPELL_ACTIONS: EventEmitter[][] = [
             })
 
             requestingPlayer.hand_cards.push(...ressurectedCards)
+
+            return []
         },
     ],
 
@@ -99,9 +102,12 @@ const RITUAL_SPELL_ACTIONS: EventEmitter[][] = [
     [// major rituals
         (match, requestingPlayer, opponent, request) => {// dark convergence (deal 3 damage to all enemy minions)
             for (const card of opponent.table_cards) { card.life -= 3 }
+
+            return []
         },
 
         (match, requestingPlayer, opponent, request) => {// summon from the deep (pending, needs the card storage system of the database first. summons a rare card from outside the game)
+            return []
         },
     ],
 
@@ -110,6 +116,8 @@ const RITUAL_SPELL_ACTIONS: EventEmitter[][] = [
     [// moderate rituals
         (match, requestingPlayer, opponent, request) => {// soul harvest (draw 3 cards)
             requestingPlayer.hand_cards.push(...requestingPlayer.deck.splice(0, 3))
+
+            return []
         },
 
         (match, requestingPlayer, opponent, request) => {// purge (destroy a random enemy minion)
@@ -117,6 +125,8 @@ const RITUAL_SPELL_ACTIONS: EventEmitter[][] = [
 
             minion.life = 0
             minion.life_modifiers = []
+
+            return []
         },
 
         (match, requestingPlayer, opponent, request) => {// rebirth (ressurect a random defeated minion)
@@ -128,6 +138,8 @@ const RITUAL_SPELL_ACTIONS: EventEmitter[][] = [
             match.graveyard.forEach((card, index) => {
                 if (card == randomCard) match.graveyard.splice(index, 1)
             })
+
+            return []
         },
     ],
 
@@ -138,12 +150,16 @@ const RITUAL_SPELL_ACTIONS: EventEmitter[][] = [
             requestingPlayer.soul_vessel_life += 6
 
             if (requestingPlayer.soul_vessel_life > 20) requestingPlayer.soul_vessel_life = 20
+
+            return []
         },
 
         (match, requestingPlayer, opponent, request) => {// ashen strike (deal 4 damage to a random enemy minion)
             const randomTarget = opponent.table_cards[Math.round(Math.random() * opponent.table_cards.length)]
 
             randomTarget.life -= 4
+
+            return []
         },
     ],
 ]
@@ -158,49 +174,8 @@ function damageSoulVesselAndDepleteEnergy(player: MatchPlayer, opponent: MatchPl
 
 
 
-function triggerAbilities(match: MatchObject, queue: GeneratedEvent[], requestingPlayer: MatchPlayer, opponent: MatchPlayer, request: MoveRequest) {
-    for (const event of queue) {
-        if (event.cardUuid && event.player && event.place) {
-            const card = match[event.player][`${event.place}_cards`].find(card => card.uuid === event.cardUuid)
-
-            for (const ability of card.abilities) {
-                event.eventResult === 'card_drawn' && ability.trigger === 'card_drawn' && !(match.current_chaos_effects?.includes('silence')) && ability.function(match, queue)
-            }
-        }
-
-        else if (event.cardUuid && event.player) {
-            const handCard = match[event.player].hand_cards.find(card => card.uuid === event.cardUuid)
-            const tableCard = match[event.player].table_cards.find(card => card.uuid === event.cardUuid)
-
-            if (handCard) {
-                for (const ability of handCard.abilities) {
-                    event.eventResult === 'card_drawn' && ability.trigger === 'card_drawn' && !(match.current_chaos_effects?.includes('silence')) && ability.function(match, queue)
-                }
-            }
-
-            if (tableCard) {
-                for (const ability of tableCard.abilities) {
-                    event.eventResult === ability.trigger && !(match.current_chaos_effects?.includes('silence')) && ability.function(match)
-                }
-            }
-        }
-
-        else {
-            const cards = [...match.player1.hand_cards, ...match.player1.table_cards, ...match.player2.hand_cards, ...match.player2.table_cards]
-
-            for (const card of cards) {
-                for (const ability of card.abilities) {
-                    event.eventResult === ability.trigger && !(match.current_chaos_effects?.includes('silence')) && ability.function(match)
-                }
-            }
-        }
-    }
-}
-
-
-
-const endTurnAndStartNext: EventEmitter = (match, requestingPlayer, opponent, request, eventDescriptorOnly) => {
-    if (eventDescriptorOnly) return [{ eventResult: 'turn_changed' }]
+const endTurnAndStartNext: EventEmitter = (match, requestingPlayer, opponent, request, descriptorOnly, event) => {
+    if (descriptorOnly) return [{ eventResult: 'turn_changed', function: endTurnAndStartNext }]
 
     match.current_turn_player = match.current_turn_player === 'player1' ? 'player2' : 'player1'
 
@@ -218,32 +193,43 @@ const endTurnAndStartNext: EventEmitter = (match, requestingPlayer, opponent, re
         match.player1.life_pool -= (match.player1.table_cards.length > 0 ? ECLIPSE_PHASE_DAMAGE : ECLIPSE_PHASE_EMPTY_BOARD_DAMAGE)
         match.player2.life_pool -= (match.player2.table_cards.length > 0 ? ECLIPSE_PHASE_DAMAGE : ECLIPSE_PHASE_EMPTY_BOARD_DAMAGE)
     }
+
+    return []
 }
 
 
 
-const resetMinionsCanAttack: EventEmitter = (match, requestingPlayer, opponent, request, eventDescriptorOnly) => {
-    if (eventDescriptorOnly) {
+const resetMinionsCanAttack: EventEmitter = (match, requestingPlayer, opponent, request, descriptorOnly, event) => {
+    if (descriptorOnly) {
         const events: GeneratedEvent[] = []
 
         for (const minion of match[match.current_turn_player].table_cards) {
-            if (!minion.can_attack) events.push({ eventResult: 'minion_enabled_attack', cardUuid: minion.uuid, player: match.current_turn_player })
+            if (!minion.can_attack) events.push(
+                {
+                    eventResult: 'minion_enabled_attack',
+                    cardUuid: minion.uuid,
+                    player: match.current_turn_player,
+                    function: resetMinionsCanAttack
+                }
+            )
         }
 
         return events
     }
 
     else {
-        for (const minion of match[match.current_turn_player].table_cards) {
-            minion.can_attack = true
-        }
+        const minion = match[event.player].table_cards.find(card => card.uuid === event.cardUuid)
+
+        minion.can_attack = true
     }
+
+    return []
 }
 
 
 
-const throwCardOnTable: EventEmitter = (match, requestingPlayer, opponent, request, eventDescriptorOnly) => {
-    if (eventDescriptorOnly) return [{ eventResult: 'summoned', cardUuid: request.card_uuid, player: match.current_turn_player }]
+const summonMinion: EventEmitter = (match, requestingPlayer, opponent, request, descriptorOnly, event) => {
+    if (descriptorOnly) return [{ eventResult: 'summoned', cardUuid: request.card_uuid, player: match.current_turn_player, function: summonMinion }]
 
     const card = requestingPlayer.hand_cards.find(card => card.uuid === request.card_uuid) as GameCard
     const cardManaCost = card.mana_cost - card.mana_cost_modifiers.reduce((total, modifier) => total + modifier.value, 0)
@@ -269,19 +255,22 @@ const throwCardOnTable: EventEmitter = (match, requestingPlayer, opponent, reque
     requestingPlayer.table_cards.push(card)
     requestingPlayer.hand_cards.splice(requestingPlayer.hand_cards.indexOf(card), 1)
     requestingPlayer.mana_level -= cardManaCost
+
+    return []
 }
 
 
 
-const attackMinion: EventEmitter = (match, requestingPlayer, opponent, request, eventDescriptorOnly) => {
-    if (eventDescriptorOnly) return [
+const attackMinion: EventEmitter = (match, requestingPlayer, opponent, request, descriptorOnly, event) => {
+    if (descriptorOnly) return [
         {
             eventResult: 'attacked_minion',
             cardUuid: request.card_uuid,
             targetsUuids: [request.target_uuid],
             player: match.current_turn_player,
             opponent: match.current_turn_player === 'player1' ? 'player2' : 'player1',
-            place: 'table'
+            place: 'table',
+            function: attackMinion
         }
     ]
 
@@ -322,11 +311,15 @@ const attackMinion: EventEmitter = (match, requestingPlayer, opponent, request, 
     else {
         target.life -= attacker.attack_damage + totalAttackModifiers
     }
+
+    return []
 }
 
 
 
-const resetChaosEffects: EventEmitter = (match, requestingPlayer, opponent, request, eventDescriptorOnly) => {
+const resetChaosEffects: EventEmitter = (match, requestingPlayer, opponent, request, descriptorOnly, event) => {
+    if (descriptorOnly) return [{ eventResult: 'chaos_effects_reset', function: resetChaosEffects }]
+
     if (match.current_chaos_effects.includes('mass_confusion')) {
         swapPlayersMinions(match)
     }
@@ -339,15 +332,56 @@ const resetChaosEffects: EventEmitter = (match, requestingPlayer, opponent, requ
     }
 
     else if (match.current_chaos_effects.includes('void_rift')) {
+        const playerMinions = requestingPlayer.table_cards.filter(minion => minion.is_master)
+        const opponentMinions = opponent.table_cards.filter(minion => minion.is_master)
+
+        if (playerMinions.length > opponentMinions.length) {
+            for (const minion of playerMinions) {
+                if (minion.swapped_life_enemy_uuid) {
+                    const enemy = opponent.table_cards.find(enemy => enemy.uuid === minion.swapped_life_enemy_uuid)
+
+                    if (enemy) {
+                        const oppositeLife = enemy.life
+
+                        enemy.life = minion.life
+                        minion.life = oppositeLife
+
+                        enemy.swapped_life_enemy_uuid = null
+                    }
+
+                    minion.swapped_life_enemy_uuid = null
+                }
+            }
+        }
+        else {
+            for (const minion of opponentMinions) {
+                if (minion.swapped_life_enemy_uuid) {
+                    const enemy = requestingPlayer.table_cards.find(enemy => enemy.uuid === minion.swapped_life_enemy_uuid)
+
+                    if (enemy) {
+                        const oppositeLife = enemy.life
+
+                        enemy.life = minion.life
+                        minion.life = oppositeLife
+
+                        enemy.swapped_life_enemy_uuid = null
+                    }
+
+                    minion.swapped_life_enemy_uuid = null
+                }
+            }
+        }
     }
 
     match.current_chaos_effects = []
+
+    return []
 }
 
 
 
-const applyChaosEffects: EventEmitter = (match, requestingPlayer, opponent, request, eventDescriptorOnly) => {
-    if (eventDescriptorOnly) return [{ eventResult: 'chaos_effects_applied', eventData: { effects_applied: match.chaos_deck.slice(0, match.chaos_draws_per_turn) } }]
+const applyChaosEffects: EventEmitter = (match, requestingPlayer, opponent, request, descriptorOnly, event) => {
+    if (descriptorOnly) return [{ eventResult: 'chaos_effects_applied', eventData: { effects_applied: match.chaos_deck.slice(0, match.chaos_draws_per_turn) }, function: applyChaosEffects }]
 
     const effects: ChaosEffectName[] = []
 
@@ -370,11 +404,37 @@ const applyChaosEffects: EventEmitter = (match, requestingPlayer, opponent, requ
         const player1Cards = match.player1.table_cards.sort((a, b) => a.life - b.life)
         const player2Cards = match.player2.table_cards.sort((a, b) => a.life - b.life)
 
-        player1Cards.length > 0 && (player1Cards[0].life = 0)
-        player2Cards.length > 0 && (player2Cards[0].life = 0)
+        if (player1Cards.length > 0) { player1Cards[0].life = 0; player1Cards[0].life_modifiers = [] }
+        if (player2Cards.length > 0) { player2Cards[0].life = 0; player2Cards[0].life_modifiers = [] }
     }
 
     else if (effects.includes('void_rift')) {
+        const playerCards = requestingPlayer.table_cards.filter(card => card.is_master)
+        const opponentCards = opponent.table_cards.filter(card => card.is_master)
+
+        if (playerCards.length > 0 && opponentCards.length > 0) {
+            if (playerCards.length > opponentCards.length) {
+                opponentCards.forEach((card, index) => {
+                    const oppositeLife = playerCards[index].life
+
+                    playerCards[index].life = card.life
+                    card.swapped_life_enemy_uuid = playerCards[index].uuid
+                    playerCards[index].swapped_life_enemy_uuid = card.uuid
+                    card.life = oppositeLife
+                })
+            }
+
+            else {
+                playerCards.forEach((card, index) => {
+                    const oppositeLife = opponentCards[index].life
+
+                    opponentCards[index].life = card.life
+                    card.swapped_life_enemy_uuid = opponentCards[index].uuid
+                    opponentCards[index].swapped_life_enemy_uuid = card.uuid
+                    card.life = oppositeLife
+                })
+            }
+        }
     }
 
     else if (effects.includes('arcane_wind')) {
@@ -399,18 +459,20 @@ const applyChaosEffects: EventEmitter = (match, requestingPlayer, opponent, requ
             match.chaos_draws_per_turn += 1
         }
     }
+
+    return []
 }
 
 
 
-const removeDeadMinions: EventEmitter = (match, requestingPlayer, opponent, request, eventDescriptorOnly) => {
+const removeDeadMinions: EventEmitter = (match, requestingPlayer, opponent, request, descriptorOnly, event) => {
     const events: GeneratedEvent[] = []
 
     for (let i = 1; i <= 2; i++) {
-        match[`player${i}`].table_cards.forEach((minion, index) => {
+        match[`player${i}`].table_cards.forEach((minion: GameCard, index: number) => {
             if (minion.life + minion.life_modifiers.reduce((total, modifier) => total + modifier.value, 0) <= 0) {
-                if (eventDescriptorOnly) {
-                    events.push({ eventResult: 'died', cardUuid: minion.uuid, player: `player${i}` as 'player1' | 'player2', place: 'table' })
+                if (descriptorOnly) {
+                    events.push({ eventResult: 'died', cardUuid: minion.uuid, player: `player${i}` as 'player1' | 'player2', place: 'table', function: removeDeadMinions })
                 }
                 else {
                     minion.owner_id = match.player1.id
@@ -419,12 +481,14 @@ const removeDeadMinions: EventEmitter = (match, requestingPlayer, opponent, requ
             }
         })
     }
+
+    return []
 }
 
 
 
-const setHeroMinion: EventEmitter = (match, requestingPlayer, opponent, request, eventDescriptorOnly) => {
-    if (eventDescriptorOnly) return [{ eventResult: 'summoned', cardUuid: request.card_uuid, player: match.current_turn_player }]
+const setHeroMinion: EventEmitter = (match, requestingPlayer, opponent, request, descriptorOnly, event) => {
+    if (descriptorOnly) return [{ eventResult: 'summoned', cardUuid: request.card_uuid, player: match.current_turn_player, function: setHeroMinion }]
 
     const cardIndex = requestingPlayer.deck.findIndex(card => card.uuid === request.card_uuid)
 
@@ -435,73 +499,81 @@ const setHeroMinion: EventEmitter = (match, requestingPlayer, opponent, request,
     if (opponent.table_cards.some(card => card.is_hero)) {
         match.current_turn_player = ['player1', 'player2'][Math.round(Math.random())] as 'player1' | 'player2'
     }
+
+    return []
 }
 
 
 
-const checkForWinnerByDefeatedMinions: EventEmitter = (match, requestingPlayer, opponent, request, eventDescriptorOnly) => {
+const checkForWinnerByDefeatedMinions: EventEmitter = (match, requestingPlayer, opponent, request, descriptorOnly, event) => {
     const playerMainCards = requestingPlayer.table_cards.filter(card => card.is_hero || card.is_master)
     const opponentMainCards = opponent.table_cards.filter(card => card.is_hero || card.is_master)
 
     if (playerMainCards.length === 0 && opponentMainCards.length === 0) {
-        if (!eventDescriptorOnly) { match.both_players_lost = true }
-        return [{ eventResult: 'won_match' }]
+        if (!descriptorOnly) { match.both_players_lost = true }
+        return [{ eventResult: 'won_match', function: checkForWinnerByDefeatedMinions }]
     }
 
     else if (playerMainCards.length === 0) {
-        if (!eventDescriptorOnly) { match.winner_id = opponent.id }
-        return [{ eventResult: 'won_match', player: match.current_turn_player === 'player1' ? 'player2' : 'player1' }]
+        if (!descriptorOnly) { match.winner_id = opponent.id }
+        return [{ eventResult: 'won_match', player: match.current_turn_player === 'player1' ? 'player2' : 'player1', function: checkForWinnerByDefeatedMinions }]
     }
 
     else if (opponentMainCards.length === 0) {
-        if (!eventDescriptorOnly) { match.winner_id = requestingPlayer.id }
-        return [{ eventResult: 'won_match', player: match.current_turn_player === 'player1' ? 'player1' : 'player2' }]
+        if (!descriptorOnly) { match.winner_id = requestingPlayer.id }
+        return [{ eventResult: 'won_match', player: match.current_turn_player === 'player1' ? 'player1' : 'player2', function: checkForWinnerByDefeatedMinions }]
     }
+
+    return []
 }
 
 
 
-const checkForWinnerByDepletedLifePool: EventEmitter = (match, requestingPlayer, opponent, request, eventDescriptorOnly) => {
+const checkForWinnerByDepletedLifePool: EventEmitter = (match, requestingPlayer, opponent, request, descriptorOnly, event) => {
     const playerLifePool = requestingPlayer.life_pool || requestingPlayer.soul_vessel_life as number
     const opponentLifePool = opponent.life_pool || opponent.soul_vessel_life as number
 
     if (playerLifePool <= 0 && opponentLifePool <= 0) {
-        if (!eventDescriptorOnly) [match.both_players_lost = true]
-        return [{ eventResult: 'won_match' }]
+        if (!descriptorOnly) [match.both_players_lost = true]
+        return [{ eventResult: 'won_match', function: checkForWinnerByDepletedLifePool }]
     }
 
     else if (playerLifePool <= 0) {
-        if (!eventDescriptorOnly) { match.winner_id = opponent.id }
-        return [{ eventResult: 'won_match', player: match.current_turn_player === 'player1' ? 'player2' : 'player1' }]
+        if (!descriptorOnly) { match.winner_id = opponent.id }
+        return [{ eventResult: 'won_match', player: match.current_turn_player === 'player1' ? 'player2' : 'player1', function: checkForWinnerByDepletedLifePool }]
     }
 
     else if (opponentLifePool <= 0) {
-        if (!eventDescriptorOnly) { match.winner_id = requestingPlayer.id }
-        return [{ eventResult: 'won_match', player: match.current_turn_player === 'player1' ? 'player2' : 'player1' }]
+        if (!descriptorOnly) { match.winner_id = requestingPlayer.id }
+        return [{ eventResult: 'won_match', player: match.current_turn_player === 'player1' ? 'player2' : 'player1', function: checkForWinnerByDepletedLifePool }]
     }
+
+    return []
 }
 
 
 
-const checkForWinnerByJudgeVerdict: EventEmitter = (match, requestingPlayer, opponent, request, eventDescriptorOnly) => {
+const checkForWinnerByJudgeVerdict: EventEmitter = (match, requestingPlayer, opponent, request, descriptorOnly, event) => {
     const playerStreaks = requestingPlayer.favorable_rolls_streak as number
     const opponentStreaks = opponent.favorable_rolls_streak as number
 
     if (playerStreaks >= 3) {
-        if (!eventDescriptorOnly) { match.winner_id = requestingPlayer.id }
-        return [{ eventResult: 'won_match', player: match.current_turn_player }]
+        if (!descriptorOnly) { match.winner_id = requestingPlayer.id }
+        return [{ eventResult: 'won_match', player: match.current_turn_player, function: checkForWinnerByJudgeVerdict }]
     }
 
     else if (opponentStreaks >= 3) {
-        if (!eventDescriptorOnly) { match.winner_id = opponent.id }
-        return [{ eventResult: 'won_match', player: match.current_turn_player === 'player1' ? 'player2' : 'player1' }]
+        if (!descriptorOnly) { match.winner_id = opponent.id }
+        return [{ eventResult: 'won_match', player: match.current_turn_player === 'player1' ? 'player2' : 'player1', function: checkForWinnerByJudgeVerdict }]
     }
+
+    return []
 }
 
 
 
-const resetDiceAndCoin: EventEmitter = (match, requestingPlayer, opponent, request, eventDescriptorOnly) => {
-    if (eventDescriptorOnly) return [{ eventResult: 'dice_and_coin_reset' }]
+const resetDiceAndCoin: EventEmitter = (match, requestingPlayer, opponent, request, descriptorOnly, event) => {
+    if (descriptorOnly) return [{ eventResult: 'dice_and_coin_reset', function: resetDiceAndCoin }]
 
     match.one_card_constraint_used = false
     match.chain_attack_damage_used = false
@@ -530,12 +602,14 @@ const resetDiceAndCoin: EventEmitter = (match, requestingPlayer, opponent, reque
         match.reversal_coin = Math.round(Math.random()) === 1 ? true : false
         match.reversal_coin_counter = 0
     }
+
+    return []
 }
 
 
 
-const destinyTurns: EventEmitter = (match, requestingPlayer, opponent, request, eventDescriptorOnly) => {
-    if (eventDescriptorOnly) return [{ eventResult: 'turn_changed' }]
+const destinyTurns: EventEmitter = (match, requestingPlayer, opponent, request, descriptorOnly, event) => {
+    if (descriptorOnly) return [{ eventResult: 'turn_changed', function: destinyTurns }]
 
     const reversalCoinCounter = match.reversal_coin_counter as number
 
@@ -559,12 +633,14 @@ const destinyTurns: EventEmitter = (match, requestingPlayer, opponent, request, 
     player.mana_level = player.mana_capacity
 
     match.total_turns_count += 1
+
+    return []
 }
 
 
 
-const sacrificeCard: EventEmitter = (match, requestingPlayer, opponent, request, eventDescriptorOnly) => {
-    if (eventDescriptorOnly) return [{ eventResult: 'card_sacrificed', cardUuid: request.card_uuid, player: match.current_turn_player }]
+const sacrificeCard: EventEmitter = (match, requestingPlayer, opponent, request, descriptorOnly, event) => {
+    if (descriptorOnly) return [{ eventResult: 'card_sacrificed', cardUuid: request.card_uuid, player: match.current_turn_player, function: sacrificeCard }]
 
     const card = requestingPlayer.hand_cards.find(card => card.uuid === request.card_uuid) as GameCard
 
@@ -575,14 +651,16 @@ const sacrificeCard: EventEmitter = (match, requestingPlayer, opponent, request,
 
         requestingPlayer.ritual_energy > 32 && (requestingPlayer.ritual_energy = 32)
     }
+
+    return []
 }
 
 
 
-const castRitualSpell: EventEmitter = (match, requestingPlayer, opponent, request, eventDescriptorOnly) => {
-    if (eventDescriptorOnly) return [{ eventResult: 'spell_cast', player: match.current_turn_player }]
+const castRitualSpell: EventEmitter = (match, requestingPlayer, opponent, request, descriptorOnly, event) => {
+    if (descriptorOnly) return [{ eventResult: 'spell_cast', player: match.current_turn_player, function: castRitualSpell }]
 
-    const energy = requestingPlayer.ritual_energy as number
+    const energy = requestingPlayer.ritual_energy
 
     if (energy >= GRAND_RITUAL_ENERGY_THRESHOLD) {
         const randomIndex = Math.round(Math.random())
@@ -615,23 +693,35 @@ const castRitualSpell: EventEmitter = (match, requestingPlayer, opponent, reques
 
         damageSoulVesselAndDepleteEnergy(requestingPlayer, opponent, MINOR_RITUAL_ENERGY_THRESHOLD, MINOR_RITUAL_DAMAGE)
     }
+
+    return []
 }
 
 
 
-const attackLifePool: EventEmitter = (match, requestingPlayer, opponent, request, eventDescriptorOnly) => {
-    if (eventDescriptorOnly) return [{ eventResult: 'attacked_life_pool', player: match.current_turn_player, opponent: match.current_turn_player === 'player1' ? 'player2' : 'player1' }]
+const attackLifePool: EventEmitter = (match, requestingPlayer, opponent, request, descriptorOnly, event) => {
+    if (descriptorOnly) return [
+        {
+            eventResult: 'attacked_life_pool',
+            player: match.current_turn_player,
+            opponent: match.current_turn_player === 'player1' ? 'player2' : 'player1',
+            function: attackLifePool
+        }
+    ]
 
     const minion = requestingPlayer.table_cards.find(card => card.uuid === request.card_uuid) as GameCard
     const totalAttackModifiers = minion.attack_modifiers.reduce((total, modifier) => total + modifier.value, 0);
 
     (opponent.life_pool as number) -= ((minion.attack_damage + totalAttackModifiers) * (match.eclipse_active ? 1 : 2))
+
+    return []
 }
 
 
 
-const updateEclipseTimer: EventEmitter = (match, requestingPlayer, opponent, request, eventDescriptorOnly) => {
-    if (eventDescriptorOnly && match.eclipse_timer === 1) return [{ eventResult: 'eclipse_began' }]
+const updateEclipseTimer: EventEmitter = (match, requestingPlayer, opponent, request, descriptorOnly, event) => {
+    if (descriptorOnly && match.eclipse_timer === 1) { return [{ eventResult: 'eclipse_began', function: updateEclipseTimer }] }
+    else if (descriptorOnly) { return [{ eventResult: 'eclipse_timer_countdown', function: updateEclipseTimer }] }
 
     if (match.eclipse_timer > 0) {
         match.eclipse_timer -= 1
@@ -652,13 +742,15 @@ const updateEclipseTimer: EventEmitter = (match, requestingPlayer, opponent, req
             }
         }
     }
+
+    return []
 }
 
 
 
-const resetEclipseTimer: EventEmitter = (match, requestingPlayer, opponent, request, eventDescriptorOnly) => {
+const resetEclipseTimer: EventEmitter = (match, requestingPlayer, opponent, request, descriptorOnly, event) => {
     if (opponent.table_cards.length === 0) {
-        if (!eventDescriptorOnly) {
+        if (!descriptorOnly) {
             match.eclipse_active = false
 
             if (match.eclipse_current_max_count > ECLIPSE_TIMER_MIN_TURNS) {
@@ -688,39 +780,91 @@ const resetEclipseTimer: EventEmitter = (match, requestingPlayer, opponent, requ
             }
         }
 
-        return [{ eventResult: 'eclipse_ended' }]
+        return [{ eventResult: 'eclipse_ended', function: resetEclipseTimer }]
+    }
+
+    return []
+}
+
+
+
+
+
+
+function executeFunctions(match: MatchObject, player: MatchPlayer, opponent: MatchPlayer, request: MoveRequest, queue: GeneratedEvent[], event: GeneratedEvent) {
+    if (event.cardUuid && event.player && event.place) {
+        const card = match[event.player][`${event.place}_cards`].find(card => card.uuid === event.cardUuid)
+
+        if (!card.abilities.some(ability => ability.replace_default_event)) event.function(match, player, opponent, request, false, event)
+
+        for (const ability of card.abilities) {
+            event.eventResult === 'card_drawn' && ability.trigger === 'card_drawn' && !(match.current_chaos_effects?.includes('silence')) && ability.function(match, player, opponent, queue, event)
+        }
+    }
+
+    else if (event.cardUuid && event.player) {
+        const handCard = match[event.player].hand_cards.find(card => card.uuid === event.cardUuid)
+        const tableCard = match[event.player].table_cards.find(card => card.uuid === event.cardUuid)
+
+        if (handCard) {
+            if (!handCard.abilities.some(ability => ability.replace_default_event)) event.function(match, player, opponent, request, false, event)
+
+            for (const ability of handCard.abilities) {
+                event.eventResult === 'card_drawn' && ability.trigger === 'card_drawn' && !(match.current_chaos_effects?.includes('silence')) && ability.function(match, player, opponent, queue, event)
+            }
+        }
+
+        if (tableCard) {
+            if (!tableCard.abilities.some(ability => ability.replace_default_event)) event.function(match, player, opponent, request, false, event)
+
+            for (const ability of tableCard.abilities) {
+                event.eventResult === ability.trigger && !(match.current_chaos_effects?.includes('silence')) && ability.function(match, player, opponent, queue, event)
+            }
+        }
+    }
+
+    else {
+        const cards = [...match.player1.hand_cards, ...match.player1.table_cards, ...match.player2.hand_cards, ...match.player2.table_cards]
+
+        for (const card of cards) {
+            if (!card.abilities.some(ability => ability.replace_default_event)) event.function(match, player, opponent, request, false, event)
+
+            for (const ability of card.abilities) {
+                event.eventResult === ability.trigger && !(match.current_chaos_effects?.includes('silence')) && ability.function(match, player, opponent, queue, event)
+            }
+        }
     }
 }
 
 
 
 const moveEvents: Partial<Record<`${GameMode}:${MoveAction}`, EventEmitter[]>> = {
-    'classic:throw_onto_table': [throwCardOnTable],
+    'classic:throw_onto_table': [summonMinion],
     'classic:attack_minion': [attackMinion, removeDeadMinions, checkForWinnerByDefeatedMinions],
     'classic:end_turn': [endTurnAndStartNext, resetMinionsCanAttack],
     'classic:choose_hero_minion': [setHeroMinion],
 
-    'destiny:throw_onto_table': [throwCardOnTable],
+    'destiny:throw_onto_table': [summonMinion],
     'destiny:attack_minion': [attackMinion, removeDeadMinions, checkForWinnerByDefeatedMinions, checkForWinnerByJudgeVerdict],
     'destiny:end_turn': [resetDiceAndCoin, destinyTurns, resetMinionsCanAttack],
     'destiny:choose_hero_minion': [setHeroMinion],
 
-    'chaos:throw_onto_table': [throwCardOnTable],
+    'chaos:throw_onto_table': [summonMinion],
     'chaos:attack_minion': [attackMinion, removeDeadMinions],
     'chaos:end_turn': [resetChaosEffects, endTurnAndStartNext, resetMinionsCanAttack, applyChaosEffects, removeDeadMinions, checkForWinnerByDefeatedMinions],
 
-    'ritual:throw_onto_table': [throwCardOnTable],
+    'ritual:throw_onto_table': [summonMinion],
     'ritual:attack_minion': [attackMinion, removeDeadMinions],
     'ritual:end_turn': [endTurnAndStartNext, resetMinionsCanAttack],
     'ritual:sacrifice_card': [sacrificeCard],
     'ritual:cast_ritual_spell': [castRitualSpell, removeDeadMinions, checkForWinnerByDepletedLifePool],
 
-    'dungeon_run:throw_onto_table': [throwCardOnTable],
+    'dungeon_run:throw_onto_table': [summonMinion],
     'dungeon_run:attack_minion': [attackMinion, removeDeadMinions, checkForWinnerByDefeatedMinions],
     'dungeon_run:end_turn': [endTurnAndStartNext, resetMinionsCanAttack],
     'dungeon_run:choose_hero_minion': [setHeroMinion],
 
-    'eclipse:throw_onto_table': [throwCardOnTable],
+    'eclipse:throw_onto_table': [summonMinion],
     'eclipse:attack_minion': [attackMinion, removeDeadMinions, resetEclipseTimer],
     'eclipse:attack_life_pool': [attackLifePool, checkForWinnerByDepletedLifePool],
     'eclipse:end_turn': [endTurnAndStartNext, updateEclipseTimer, resetMinionsCanAttack],
@@ -730,11 +874,15 @@ const moveEvents: Partial<Record<`${GameMode}:${MoveAction}`, EventEmitter[]>> =
 
 export function createMatchEventsQueue(match: MatchObject, requestingPlayer: MatchPlayer, opponent: MatchPlayer, request: MoveRequest): GeneratedEvent[] {
     const key = `${match.mode}:${request.action}` as `${GameMode}:${MoveAction}`
-    const events = moveEvents[key]
+    const defaultEvents = moveEvents[key]
     const queue: GeneratedEvent[] = []
 
-    for (const eventDescription of events) {
-        eventDescription(match, requestingPlayer, opponent, request, true)
+    for (const eventDescription of defaultEvents) {
+        queue.push(...eventDescription(match, requestingPlayer, opponent, request, true))
+    }
+
+    for (let index = 0; index < queue.length; index++) {
+        executeFunctions(match, requestingPlayer, opponent, request, queue, queue[index])
     }
 
     return queue

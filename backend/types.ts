@@ -23,7 +23,7 @@ export type GameCard = {
     mana_cost_modifiers: { value: number, source: string }[]
     life: number
     life_modifiers: { value: number, source: string }[]
-    swapped_life?: { value: number, enemy_uuid: string } // used by the 'void rift' chaos effect
+    swapped_life_enemy_uuid?: string // used by the 'void rift' chaos effect
     base_life: number
     attack_damage: number
     attack_modifiers: { value: number, source: string }[]
@@ -112,6 +112,6 @@ export type MoveRequest = {
 
 
 
-export type EventResult = 'turn_changed' | 'summoned' | 'died' | 'ressurected' | 'attacked_minion'
-    | 'damaged' | 'card_drawn' | 'won_match' | 'ability_triggered' | 'chose_hero' | 'chose_card' | 'dice_and_coin_reset' | 'chaos_effects_applied' | 'card_sacrificed' |
-    'spell_cast' | 'attacked_life_pool' | 'eclipse_began' | 'eclipse_ended' | 'minion_enabled_attack' | 'none'
+export type EventResult = 'turn_changed' | 'summoned' | 'died' | 'ressurected' | 'attacked_minion' | 'damaged' | 'card_drawn' |
+    'won_match' | 'ability_triggered' | 'chose_hero' | 'chose_card' | 'dice_and_coin_reset' | 'chaos_effects_applied' | 'chaos_effects_reset'
+    | 'card_sacrificed' | 'spell_cast' | 'attacked_life_pool' | 'eclipse_timer_countdown' | 'eclipse_began' | 'eclipse_ended' | 'minion_enabled_attack' | 'any'

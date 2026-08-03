@@ -144,7 +144,7 @@ export async function joinWaitingQueue(identifiers: playerIdentifiers, waitingQu
                     mana_cost_modifiers: [],
                     classes: card.classes,
                     abilities: card.abilities.map(ability => (
-                        { function: new Function('match', 'queue', ability.function), trigger: ability.trigger as EventResult, replace_default_event: ability.replace_default_event }
+                        { function: new Function('match', 'player', 'opponent', 'queue', 'event', ability.function), trigger: ability.trigger as EventResult, replace_default_event: ability.replace_default_event }
                     )),
                     custom_properties: [],
                     can_attack: false,
