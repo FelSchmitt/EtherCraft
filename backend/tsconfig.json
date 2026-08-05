@@ -11,6 +11,6 @@
     "resolveJsonModule": true,
     "skipLibCheck": true
   },
-  "include": ["./*.ts", "types.ts", "match_handlers/match_engine.ts", "match_handlers/game_modes_rules.ts"],
+  "include": ["./*.ts", "types.ts", "match_handlers/events_queue.ts", "match_handlers/game_modes_rules.ts"],
   "exclude": ["node_modules", "dist"]
 }

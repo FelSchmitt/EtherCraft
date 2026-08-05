@@ -1,7 +1,9 @@
 import { Server, Socket } from 'socket.io'
-import { RedisClientType, RedisJSON } from 'redis'
-import { MatchObject, MoveRequest, playerIdentifiers, GameCard, CardRarity, EventResult } from './types'
-import { executeAction, buildPlayerView } from './match_handlers/match_engine'
+import { RedisClientType } from 'redis'
+import { MatchObject, MoveRequest, playerIdentifiers, GameCard, EventResult } from './types'
+import { testCards } from './test_cards'
+import { validateAction } from './match_handlers/game_modes_rules'
+import { createMatchEventsQueue } from './match_handlers/events_queue'
 
 
 
@@ -17,11 +19,6 @@ async function getMatchFromSocketId(socketId: string, redisConnection: RedisClie
 
 async function updateMatch(match: MatchObject, redisConnection: RedisClientType): Promise<void> {
     await redisConnection.json.set(match.match_id, '$', JSON.stringify(match))
-}
-
-function broadcastMatchState(match: MatchObject, socketServer: Server): void {
-    socketServer.to(match.player1.socket_id).emit('match_state', match)
-    socketServer.to(match.player2.socket_id).emit('match_state', match)
 }
 
 function createMatch(playersIds: playerIdentifiers[], handCards: GameCard[][], matchId: string): MatchObject {
@@ -82,38 +79,6 @@ function createMatch(playersIds: playerIdentifiers[], handCards: GameCard[][], m
 
 
 
-const starterCards = [
-    {
-        card_id: 'ironwood_ent',
-        mana_cost: 1,
-        base_life: 5,
-        attack_damage: 2,
-        classes: ['verdant', 'guardian'],
-        abilities: [],
-        rarity: 'uncommon' as CardRarity
-    },
-    {
-        card_id: 'emberveil_assassin',
-        mana_cost: 4,
-        base_life: 5,
-        attack_damage: 2,
-        classes: ['shadow', 'infernal'],
-        abilities: [],
-        rarity: 'epic' as CardRarity
-    },
-    {
-        card_id: 'shadow_demon',
-        mana_cost: 4,
-        base_life: 4,
-        attack_damage: 3,
-        classes: ['spectral', 'underworld'],
-        abilities: [],
-        rarity: 'rare' as CardRarity
-    },
-]
-
-
-
 export function broadcastUserMessage(message: { sender: string, text: string }, socketServer: Server) {
     console.log(`Message from frontend: ${message.text}`)
     socketServer.emit('chat', { sender: message.sender, color: '#1cbe00', text: message.text })
@@ -128,12 +93,12 @@ export async function joinWaitingQueue(identifiers: playerIdentifiers, waitingQu
         const playersIds = [waitingQueue.shift(), waitingQueue.shift()]
         const matchId = `match:${Date.now()}_${Math.round(Math.random() * 100)}`
 
-        const uuids = await Promise.all(Array.from({ length: starterCards.length * 2 }, () => generateCardUuid(redisConnection)))
+        const uuids = await Promise.all(Array.from({ length: testCards.length * 2 }, () => generateCardUuid(redisConnection)))
 
         const handsCards = playersIds.map((player, index) =>
-            starterCards.map((card, cardIndex) => (
+            testCards.map((card, cardIndex) => (
                 {
-                    uuid: uuids[index * starterCards.length + cardIndex],
+                    uuid: uuids[index * testCards.length + cardIndex],
                     card_id: card.card_id,
                     mana_cost: card.mana_cost,
                     base_life: card.base_life,
@@ -174,16 +139,19 @@ export async function moveRequest(request: MoveRequest, socketServer: Server, cl
 
         const player = match.player1.socket_id === client.id ? match.player1 : match.player2
         const opponent = match.player1.socket_id === client.id ? match.player2 : match.player1
-        const result = executeAction(match, player, opponent, request)
 
+        const result = validateAction(match, player, opponent, request)
         if (!result.ok) {
             client.emit('chat', { sender: 'Server', color: '#ffaa00', text: result.message })
             return
         }
 
-        await updateMatch(match, redisConnection)
+        const moveResults = createMatchEventsQueue(match, player, opponent, request)
 
-        broadcastMatchState(match, socketServer)
+        socketServer.to(match.player1.socket_id).emit('move_response', moveResults)
+        socketServer.to(match.player2.socket_id).emit('move_response', moveResults)
+
+        await updateMatch(match, redisConnection)
 
         if (match.winner_id) {
             socketServer.to(match.match_id).emit('match_over', { winner_id: match.winner_id })

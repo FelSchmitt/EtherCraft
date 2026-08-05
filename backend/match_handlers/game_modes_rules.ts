@@ -1,20 +1,13 @@
 import { MatchObject, MatchPlayer, MoveRequest, GameMode, MoveAction, RitualSpellName } from '../types'
 import { MINOR_RITUAL_ENERGY_THRESHOLD } from './events_queue'
 
-type ValidationResult = { ok: true } | { ok: false, message: string }
+type ValidationResult = { ok: boolean, message: string }
 type Validator = (match: MatchObject, requestingPlayer: MatchPlayer, opponent: MatchPlayer, request: MoveRequest) => ValidationResult
 
-const pass: ValidationResult = { ok: true }
+const pass: ValidationResult = { ok: true, message: null }
 const fail = (message: string): ValidationResult => ({ ok: false, message: message })
 
 
-
-const RITUAL_SPELL_COSTS: Record<RitualSpellName, number> = {
-    bloodbind: 8, ashen_strike: 8,
-    soul_harvest: 16, purge: 16, rebirth: 16,
-    dark_convergence: 24, summon_from_deep: 24,
-    annihilation: 32, necromancy_curse: 32
-}
 
 const ACTION_DIE_SKIP_ATTACKS = 6
 const ACTION_DIE_MINIMUM_ATTACK = 3
@@ -102,7 +95,7 @@ const cardCanBeSacrificed: Validator = (match, requestingPlayer, opponent, reque
 
 
 const ritualEnergyIsFull: Validator = (match, requestingPlayer, opponent, request) => {
-    return requestingPlayer.ritual_energy < 32 ? pass : fail('Your ritual energy level is already full')
+    return requestingPlayer.ritual_energy < 32 ? pass : fail('Your ritual energy is already full')
 }
 
 
