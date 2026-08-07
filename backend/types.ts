@@ -16,19 +16,21 @@ export type RitualSpellName = 'bloodbind' | 'ashen_strike' | 'soul_harvest' | 'p
 
 
 
+type StatusModifier = { value: number, source: string }
+
 export type GameCard = {
     card_id: string
     uuid: string
     mana_cost: number
-    mana_cost_modifiers: { value: number, source: string }[]
+    mana_cost_modifiers: StatusModifier[]
     life: number
-    life_modifiers: { value: number, source: string }[]
+    life_modifiers: StatusModifier[]
     swapped_life_enemy_uuid?: string // used by the 'void rift' chaos effect
     base_life: number
     attack_damage: number
-    attack_modifiers: { value: number, source: string }[]
+    attack_modifiers: StatusModifier[]
     can_attack: boolean
-    classes: string[]
+    classes: {name: string, function?: Function, trigger?: EventResult}[]
     abilities: { function: Function, trigger: EventResult, replace_default_event: boolean }[]
     custom_properties: { persist: boolean, source_card_uuid?: string, properties: any[] }[] // used by the special abilities of itself and other cards
     rarity: CardRarity
@@ -112,6 +114,6 @@ export type MoveRequest = {
 
 
 
-export type EventResult = 'turn_changed' | 'summoned' | 'died' | 'ressurected' | 'attacked_minion' | 'damaged' | 'card_drawn' |
+export type EventResult = 'turn_changed' | 'summoned' | 'died' | 'ressurected' | 'attacked' | 'damaged' | 'card_drawn' |
     'won_match' | 'ability_triggered' | 'chose_hero' | 'chose_card' | 'dice_and_coin_reset' | 'chaos_effects_applied' | 'chaos_effects_reset'
     | 'card_sacrificed' | 'spell_cast' | 'attacked_life_pool' | 'eclipse_timer_countdown' | 'eclipse_began' | 'eclipse_ended' | 'minion_enabled_attack' | 'any'

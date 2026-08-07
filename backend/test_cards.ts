@@ -8,7 +8,7 @@ export const testCards = [
         mana_cost: 1,
         base_life: 5,
         attack_damage: 2,
-        classes: ['verdant', 'guardian'],
+        classes: [{ name: 'verdant' }, { name: 'thorns', trigger: 'damaged' as 'damaged', function: '' }],
         abilities: [],
         rarity: 'uncommon' as CardRarity
     },
@@ -17,7 +17,7 @@ export const testCards = [
         mana_cost: 4,
         base_life: 5,
         attack_damage: 2,
-        classes: ['shadow', 'infernal'],
+        classes: [{ name: 'shadow' }, { name: 'infernal' }],
         abilities: [],
         rarity: 'epic' as CardRarity
     },
@@ -26,7 +26,7 @@ export const testCards = [
         mana_cost: 4,
         base_life: 4,
         attack_damage: 3,
-        classes: ['spectral', 'underworld'],
+        classes: [{ name: 'spectral' }, { name: 'underworld' }],
         abilities: [],
         rarity: 'rare' as CardRarity
     },
@@ -35,7 +35,7 @@ export const testCards = [
         mana_cost: 1,
         base_life: 3,
         attack_damage: 2,
-        classes: ['beast'],
+        classes: [{ name: 'beast' }, { name: 'primitive' }],
         abilities: [],
         rarity: 'uncommon' as CardRarity
     },

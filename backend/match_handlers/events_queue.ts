@@ -2,12 +2,12 @@ import { MatchObject, MatchPlayer, MoveRequest, GameMode, MoveAction, GameCard, 
 
 export type GeneratedEvent = {
     eventResult: EventResult
-    function: (...args: any[]) => any
+    function?: (...args: any[]) => any
     player?: MatchPlayer
     opponent?: MatchPlayer
     place?: 'hand' | 'table'
     source?: GameCard
-    targets?: GameCard[]
+    target?: GameCard
     eventData?: Record<string, any>
 }
 
@@ -267,16 +267,28 @@ const summonMinion: EventEmitter = (match, actingPlayer, opponent, request, desc
 
 
 const attackMinion: EventEmitter = (match, actingPlayer, opponent, request, descriptorOnly, event) => {
-    if (descriptorOnly) return [
-        {
-            eventResult: 'attacked_minion',
-            source: actingPlayer.table_cards.find(minion => minion.uuid === request.card_uuid),
-            targetsUuids: [opponent.table_cards.find(minion => minion.uuid === request.target_uuid)],
-            player: actingPlayer,
-            opponent: opponent,
-            function: attackMinion
-        }
-    ]
+    if (descriptorOnly) {
+        const attacker = actingPlayer.table_cards.find(minion => minion.uuid === request.card_uuid)
+        const target = opponent.table_cards.find(minion => minion.uuid === request.target_uuid)
+
+        return [
+            {
+                eventResult: 'attacked',
+                source: attacker,
+                target: target,
+                player: actingPlayer,
+                opponent: opponent,
+                function: attackMinion
+            },
+            {
+                eventResult: 'damaged',
+                source: target,
+                target: attacker,
+                player: actingPlayer,
+                opponent: opponent
+            },
+        ]
+    }
 
     const totalAttackModifiers = event.source.attack_modifiers.reduce((total, modifier) => total + modifier.value, 0)
     const twentyFivePercentChance = Math.floor(Math.random() * 4)
@@ -284,15 +296,15 @@ const attackMinion: EventEmitter = (match, actingPlayer, opponent, request, desc
     event.source.can_attack = false
 
     if (match.action_die === FATE_DIE_MISS_CHANCE && twentyFivePercentChance === 0) {
-        event.targets[0].life -= 0
+        event.target.life -= 0
     }
 
     else if (match.action_die === FATE_DIE_DOUBLE_DAMAGE_CHANCE && twentyFivePercentChance === 0) {
-        event.targets[0].life -= (event.source.attack_damage + totalAttackModifiers) * 2
+        event.target.life -= (event.source.attack_damage + totalAttackModifiers) * 2
     }
 
     else if (match.action_die === FATE_DIE_CHAIN_DAMAGE && !match.chain_attack_damage_used) {
-        event.targets[0].life -= event.source.attack_damage + totalAttackModifiers
+        event.target.life -= event.source.attack_damage + totalAttackModifiers
 
         for (const enemyMinion of opponent.table_cards) {
             enemyMinion.life -= Math.ceil((event.source.attack_damage + totalAttackModifiers) / 2)
@@ -302,15 +314,15 @@ const attackMinion: EventEmitter = (match, actingPlayer, opponent, request, desc
     }
 
     else if (match.current_chaos_effects.includes('blood_moon')) {
-        event.targets[0].life -= CHAOS_BLOOD_MOON_MINIONS_DAMAGE
+        event.target.life -= CHAOS_BLOOD_MOON_MINIONS_DAMAGE
     }
 
     else if (match.current_chaos_effects.includes('surge')) {
-        event.targets[0].life -= event.source.attack_damage + totalAttackModifiers + CHAOS_SURGE_ATTACK_BONUS
+        event.target.life -= event.source.attack_damage + totalAttackModifiers + CHAOS_SURGE_ATTACK_BONUS
     }
 
     else {
-        event.targets[0].life -= event.source.attack_damage + totalAttackModifiers
+        event.target.life -= event.source.attack_damage + totalAttackModifiers
     }
 
     return []
@@ -800,16 +812,19 @@ const resetEclipseTimer: EventEmitter = (match, actingPlayer, opponent, request,
 
 function executeFunctions(match: MatchObject, player: MatchPlayer, opponent: MatchPlayer, request: MoveRequest, queue: GeneratedEvent[], event: GeneratedEvent) {
     if (event.source) {
-        if (!event.source.abilities.some(ability => ability.replace_default_event)) event.function(match, player, opponent, request, false, event)
+        if (!event.source.abilities.some(ability => ability.replace_default_event) && event.function) {
+            event.function(match, player, opponent, request, false, event)
+        }
+
+        if (event.eventResult === 'died' && !event.source) {
+        }
 
         for (const ability of event.source.abilities) {
             event.eventResult === ability.trigger && !(match.current_chaos_effects?.includes('silence')) && ability.function(match, player, opponent, queue, event)
         }
 
-        for (const target of event.targets) {
-            for (const ability of target.abilities) {
-                event.eventResult === ability.trigger && !(match.current_chaos_effects?.includes('silence')) && ability.function(match, player, opponent, queue, event)
-            }
+        for (const minionClass of event.source.classes) {
+            event.eventResult === minionClass.trigger && minionClass.function(event.source, event.target, event.eventResult)
         }
     }
 
@@ -817,7 +832,9 @@ function executeFunctions(match: MatchObject, player: MatchPlayer, opponent: Mat
         const cards = [...match.player1.hand_cards, ...match.player1.table_cards, ...match.player2.hand_cards, ...match.player2.table_cards]
 
         for (const card of cards) {
-            if (!card.abilities.some(ability => ability.replace_default_event)) event.function(match, player, opponent, request, false, event)
+            if (!card.abilities.some(ability => ability.replace_default_event) && event.function) {
+                event.function(match, player, opponent, request, false, event)
+            }
 
             for (const ability of card.abilities) {
                 event.eventResult === ability.trigger && !(match.current_chaos_effects?.includes('silence')) && ability.function(match, player, opponent, queue, event)
