@@ -1,17 +1,11 @@
 import { MatchObject, MatchPlayer, MoveRequest, GameMode, MoveAction, RitualSpellName } from '../types'
-import { MINOR_RITUAL_ENERGY_THRESHOLD } from './events_queue'
+import { MINOR_RITUAL_ENERGY_THRESHOLD, ACTION_DIE_MINIMUM_ATTACK, ACTION_DIE_MINIMUM_ATTACK_VALUE, ACTION_DIE_SKIP_ATTACKS } from './mode_constants'
 
 type ValidationResult = { ok: boolean, message: string }
 type Validator = (match: MatchObject, requestingPlayer: MatchPlayer, opponent: MatchPlayer, request: MoveRequest) => ValidationResult
 
 const pass: ValidationResult = { ok: true, message: null }
 const fail = (message: string): ValidationResult => ({ ok: false, message: message })
-
-
-
-const ACTION_DIE_SKIP_ATTACKS = 6
-const ACTION_DIE_MINIMUM_ATTACK = 3
-const ACTION_DIE_MINIMUM_ATTACK_VALUE = 3
 
 
 
@@ -73,7 +67,7 @@ const targetExistsOnOpponentBoard: Validator = (match, requestingPlayer, opponen
 
 
 const defensiveMustBeTargetedFirst: Validator = (match, requestingPlayer, opponent, request) => {
-    const defensive = opponent.table_cards.filter(card => card.classes.includes('defensive'))
+    const defensive = opponent.table_cards.filter(card => card.classes.some(cardClass => cardClass.name === 'defensive'))
 
     return defensive.length === 0 ? pass : fail('Must destroy defensive minions before targeting others')
 }

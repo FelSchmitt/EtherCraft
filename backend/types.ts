@@ -32,7 +32,7 @@ export type GameCard = {
     can_attack: boolean
     classes: {name: string, function?: Function, trigger?: EventResult}[]
     abilities: { function: Function, trigger: EventResult, replace_default_event: boolean }[]
-    custom_properties: { persist: boolean, source_card_uuid?: string, properties: any[] }[] // used by the special abilities of itself and other cards
+    custom_properties: { persist: boolean, source_card?: GameCard, properties: any[] }[] // used by the special abilities of itself and other cards
     rarity: CardRarity
     is_hero?: boolean
     is_master?: boolean

@@ -1,4 +1,5 @@
 import { MatchObject, MatchPlayer, MoveRequest, GameMode, MoveAction, GameCard, ChaosEffectName, EventResult } from '../types'
+import * as constants from './mode_constants'
 
 export type GeneratedEvent = {
     eventResult: EventResult
@@ -12,42 +13,6 @@ export type GeneratedEvent = {
 }
 
 type EventEmitter = (match: MatchObject, actingPlayer: MatchPlayer, opponent: MatchPlayer, request: MoveRequest, descriptorOnly?: boolean, event?: GeneratedEvent) => GeneratedEvent[]
-
-
-// per-mode constants
-const DEFAULT_MANA_INCREASE = 1
-const MAX_MANA_CAPACITY = 12
-
-export const ACTION_DIE_LESS_MANA_COST = 2
-export const ACTION_DIE_MANA_DISCOUNT = 1
-const ACTION_DIE_ONE_CARD = 1
-const ACTION_DIE_EXTRA_CARD = 4
-const ACTION_DIE_DOUBLE_DAMAGE = 5
-const FATE_DIE_MISS_CHANCE = 1
-const FATE_DIE_DOUBLE_DAMAGE_CHANCE = 3
-const FATE_DIE_CHAIN_DAMAGE = 4
-const REVERSAL_COIN_TURNS_INTERVAL = 3
-const FAVORABLE_STREAK_MIN_NUMBER = 4
-
-const CHAOS_DECK_EXHAUSTION_THRESHOLD = 3
-const CHAOS_EARTHQUAKE_DAMAGE = 2
-const CHAOS_BLOOD_MOON_MINIONS_DAMAGE = 1
-const CHAOS_SURGE_ATTACK_BONUS = 2
-
-export const MINOR_RITUAL_ENERGY_THRESHOLD = 8
-const MODERATE_RITUAL_ENERGY_THRESHOLD = 16
-const MAJOR_RITUAL_ENERGY_THRESHOLD = 24
-const GRAND_RITUAL_ENERGY_THRESHOLD = 32
-const MINOR_RITUAL_DAMAGE = 3
-const MODERATE_RITUAL_DAMAGE = 6
-const MAJOR_RITUAL_DAMAGE = 8
-const GRAND_RITUAL_DAMAGE = 10
-
-const ECLIPSE_RESET_TURNS_DISCOUNT = 2
-const ECLIPSE_PHASE_DAMAGE = 2
-const ECLIPSE_PHASE_EMPTY_BOARD_DAMAGE = 3
-const ECLIPSE_PHASE_ENTERED_EMPTY_BOARD_DAMAGE = 4
-const ECLIPSE_TIMER_MIN_TURNS = 2
 
 
 
@@ -182,8 +147,8 @@ const endTurnAndStartNext: EventEmitter = (match, actingPlayer, opponent, reques
 
     const player = match[match.current_turn_player]
 
-    if (player.mana_capacity < MAX_MANA_CAPACITY && !match.eclipse_active) {
-        player.mana_capacity += DEFAULT_MANA_INCREASE
+    if (player.mana_capacity < constants.MAX_MANA_CAPACITY && !match.eclipse_active) {
+        player.mana_capacity += constants.DEFAULT_MANA_INCREASE
     }
 
     player.mana_level = player.mana_capacity
@@ -191,8 +156,8 @@ const endTurnAndStartNext: EventEmitter = (match, actingPlayer, opponent, reques
     match.total_turns_count += 1
 
     if (match.eclipse_active) {
-        match.player1.life_pool -= (match.player1.table_cards.length > 0 ? ECLIPSE_PHASE_DAMAGE : ECLIPSE_PHASE_EMPTY_BOARD_DAMAGE)
-        match.player2.life_pool -= (match.player2.table_cards.length > 0 ? ECLIPSE_PHASE_DAMAGE : ECLIPSE_PHASE_EMPTY_BOARD_DAMAGE)
+        match.player1.life_pool -= (match.player1.table_cards.length > 0 ? constants.ECLIPSE_PHASE_DAMAGE : constants.ECLIPSE_PHASE_EMPTY_BOARD_DAMAGE)
+        match.player2.life_pool -= (match.player2.table_cards.length > 0 ? constants.ECLIPSE_PHASE_DAMAGE : constants.ECLIPSE_PHASE_EMPTY_BOARD_DAMAGE)
     }
 
     return []
@@ -239,17 +204,17 @@ const summonMinion: EventEmitter = (match, actingPlayer, opponent, request, desc
 
     const cardManaCost = event.source.mana_cost - event.source.mana_cost_modifiers.reduce((total, modifier) => total + modifier.value, 0)
 
-    if (match.mode === 'destiny' && match.action_die === ACTION_DIE_ONE_CARD) {
+    if (match.mode === 'destiny' && match.action_die === constants.ACTION_DIE_ONE_CARD) {
         match.one_card_constraint_used = true
     }
 
-    if (match.action_die === ACTION_DIE_DOUBLE_DAMAGE && !match.double_damage_bonus_used) {
+    if (match.action_die === constants.ACTION_DIE_DOUBLE_DAMAGE && !match.double_damage_bonus_used) {
         event.source.attack_modifiers.push({ value: event.source.attack_damage, source: 'destiny_action_die' })
         match.double_damage_bonus_used = true
     }
 
-    if (match.action_die === ACTION_DIE_LESS_MANA_COST) {
-        event.source.mana_cost_modifiers.push({ value: -ACTION_DIE_MANA_DISCOUNT, source: 'destiny_action_die' })
+    if (match.action_die === constants.ACTION_DIE_LESS_MANA_COST) {
+        event.source.mana_cost_modifiers.push({ value: -constants.ACTION_DIE_MANA_DISCOUNT, source: 'destiny_action_die' })
     }
 
     if (match.mode === 'eclipse' && match.eclipse_active) {
@@ -295,15 +260,15 @@ const attackMinion: EventEmitter = (match, actingPlayer, opponent, request, desc
 
     event.source.can_attack = false
 
-    if (match.action_die === FATE_DIE_MISS_CHANCE && twentyFivePercentChance === 0) {
+    if (match.action_die === constants.FATE_DIE_MISS_CHANCE && twentyFivePercentChance === 0) {
         event.target.life -= 0
     }
 
-    else if (match.action_die === FATE_DIE_DOUBLE_DAMAGE_CHANCE && twentyFivePercentChance === 0) {
+    else if (match.action_die === constants.FATE_DIE_DOUBLE_DAMAGE_CHANCE && twentyFivePercentChance === 0) {
         event.target.life -= (event.source.attack_damage + totalAttackModifiers) * 2
     }
 
-    else if (match.action_die === FATE_DIE_CHAIN_DAMAGE && !match.chain_attack_damage_used) {
+    else if (match.action_die === constants.FATE_DIE_CHAIN_DAMAGE && !match.chain_attack_damage_used) {
         event.target.life -= event.source.attack_damage + totalAttackModifiers
 
         for (const enemyMinion of opponent.table_cards) {
@@ -314,11 +279,11 @@ const attackMinion: EventEmitter = (match, actingPlayer, opponent, request, desc
     }
 
     else if (match.current_chaos_effects.includes('blood_moon')) {
-        event.target.life -= CHAOS_BLOOD_MOON_MINIONS_DAMAGE
+        event.target.life -= constants.CHAOS_BLOOD_MOON_MINIONS_DAMAGE
     }
 
     else if (match.current_chaos_effects.includes('surge')) {
-        event.target.life -= event.source.attack_damage + totalAttackModifiers + CHAOS_SURGE_ATTACK_BONUS
+        event.target.life -= event.source.attack_damage + totalAttackModifiers + constants.CHAOS_SURGE_ATTACK_BONUS
     }
 
     else {
@@ -402,10 +367,10 @@ const applyChaosEffects: EventEmitter = (match, actingPlayer, opponent, request,
 
     if (effects.includes('earthquake')) {
         for (const card of match.player1.table_cards) {
-            card.life -= CHAOS_EARTHQUAKE_DAMAGE
+            card.life -= constants.CHAOS_EARTHQUAKE_DAMAGE
         }
         for (const card of match.player2.table_cards) {
-            card.life -= CHAOS_EARTHQUAKE_DAMAGE
+            card.life -= constants.CHAOS_EARTHQUAKE_DAMAGE
         }
     }
 
@@ -468,7 +433,7 @@ const applyChaosEffects: EventEmitter = (match, actingPlayer, opponent, request,
         match.chaos_deck_exhausted_count += 1
         match.chaos_deck = shuffledChaosEffects
 
-        if (match.chaos_deck_exhausted_count >= CHAOS_DECK_EXHAUSTION_THRESHOLD) {
+        if (match.chaos_deck_exhausted_count >= constants.CHAOS_DECK_EXHAUSTION_THRESHOLD) {
             match.chaos_draws_per_turn += 1
         }
     }
@@ -613,13 +578,13 @@ const resetDiceAndCoin: EventEmitter = (match, actingPlayer, opponent, request, 
     match.action_die = Math.ceil(Math.random() * 6)
     match.fate_die = Math.ceil(Math.random() * 4)
 
-    if (match.action_die >= FAVORABLE_STREAK_MIN_NUMBER) {
-        (actingPlayer.favorable_rolls_streak as number) += 1
+    if (match.action_die >= constants.FAVORABLE_STREAK_MIN_NUMBER) {
+        actingPlayer.favorable_rolls_streak += 1
     }
 
-    (match.reversal_coin_counter as number) += 1
+    match.reversal_coin_counter += 1
 
-    if ((match.reversal_coin_counter as number) >= REVERSAL_COIN_TURNS_INTERVAL) {
+    if (match.reversal_coin_counter >= constants.REVERSAL_COIN_TURNS_INTERVAL) {
         match.reversal_coin = Math.round(Math.random()) === 1 ? true : false
         match.reversal_coin_counter = 0
     }
@@ -632,10 +597,8 @@ const resetDiceAndCoin: EventEmitter = (match, actingPlayer, opponent, request, 
 const destinyTurns: EventEmitter = (match, actingPlayer, opponent, request, descriptorOnly, event) => {
     if (descriptorOnly) return [{ eventResult: 'turn_changed', function: destinyTurns }]
 
-    const reversalCoinCounter = match.reversal_coin_counter as number
-
-    if (match.reversal_coin) {
-        if ((reversalCoinCounter % 2) > 0) {
+    if (match.reversal_coin_counter) {
+        if ((match.reversal_coin_counter % 2) > 0) {
             match.current_turn_player = match.current_turn_player === 'player1' ? 'player2' : 'player1'
         }
     }
@@ -650,7 +613,7 @@ const destinyTurns: EventEmitter = (match, actingPlayer, opponent, request, desc
         card.can_attack = true
     }
 
-    player.mana_capacity < MAX_MANA_CAPACITY && (player.mana_capacity += DEFAULT_MANA_INCREASE)
+    player.mana_capacity < constants.MAX_MANA_CAPACITY && (player.mana_capacity += constants.DEFAULT_MANA_INCREASE)
     player.mana_level = player.mana_capacity
 
     match.total_turns_count += 1
@@ -681,36 +644,36 @@ const castRitualSpell: EventEmitter = (match, actingPlayer, opponent, request, d
 
     const energy = actingPlayer.ritual_energy
 
-    if (energy >= GRAND_RITUAL_ENERGY_THRESHOLD) {
+    if (energy >= constants.GRAND_RITUAL_ENERGY_THRESHOLD) {
         const randomIndex = Math.round(Math.random())
 
         RITUAL_SPELL_ACTIONS[0][randomIndex](match, actingPlayer, opponent, request)
 
-        damageSoulVesselAndDepleteEnergy(actingPlayer, opponent, GRAND_RITUAL_ENERGY_THRESHOLD, GRAND_RITUAL_DAMAGE)
+        damageSoulVesselAndDepleteEnergy(actingPlayer, opponent, constants.GRAND_RITUAL_ENERGY_THRESHOLD, constants.GRAND_RITUAL_DAMAGE)
     }
 
-    else if (energy >= MAJOR_RITUAL_ENERGY_THRESHOLD) {
+    else if (energy >= constants.MAJOR_RITUAL_ENERGY_THRESHOLD) {
         const randomIndex = Math.round(Math.random())
 
         RITUAL_SPELL_ACTIONS[1][randomIndex](match, actingPlayer, opponent, request)
 
-        damageSoulVesselAndDepleteEnergy(actingPlayer, opponent, MAJOR_RITUAL_ENERGY_THRESHOLD, MAJOR_RITUAL_DAMAGE)
+        damageSoulVesselAndDepleteEnergy(actingPlayer, opponent, constants.MAJOR_RITUAL_ENERGY_THRESHOLD, constants.MAJOR_RITUAL_DAMAGE)
     }
 
-    else if (energy >= MODERATE_RITUAL_ENERGY_THRESHOLD) {
+    else if (energy >= constants.MODERATE_RITUAL_ENERGY_THRESHOLD) {
         const randomIndex = Math.floor(Math.random() * 3)
 
         RITUAL_SPELL_ACTIONS[2][randomIndex](match, actingPlayer, opponent, request)
 
-        damageSoulVesselAndDepleteEnergy(actingPlayer, opponent, MODERATE_RITUAL_ENERGY_THRESHOLD, MODERATE_RITUAL_DAMAGE)
+        damageSoulVesselAndDepleteEnergy(actingPlayer, opponent, constants.MODERATE_RITUAL_ENERGY_THRESHOLD, constants.MODERATE_RITUAL_DAMAGE)
     }
 
-    else if (energy >= MINOR_RITUAL_ENERGY_THRESHOLD) {
+    else if (energy >= constants.MINOR_RITUAL_ENERGY_THRESHOLD) {
         const randomIndex = Math.round(Math.random())
 
         RITUAL_SPELL_ACTIONS[3][randomIndex](match, actingPlayer, opponent, request)
 
-        damageSoulVesselAndDepleteEnergy(actingPlayer, opponent, MINOR_RITUAL_ENERGY_THRESHOLD, MINOR_RITUAL_DAMAGE)
+        damageSoulVesselAndDepleteEnergy(actingPlayer, opponent, constants.MINOR_RITUAL_ENERGY_THRESHOLD, constants.MINOR_RITUAL_DAMAGE)
     }
 
     return []
@@ -731,7 +694,7 @@ const attackLifePool: EventEmitter = (match, actingPlayer, opponent, request, de
     const minion = actingPlayer.table_cards.find(card => card.uuid === request.card_uuid) as GameCard
     const totalAttackModifiers = minion.attack_modifiers.reduce((total, modifier) => total + modifier.value, 0);
 
-    (opponent.life_pool as number) -= ((minion.attack_damage + totalAttackModifiers) * (match.eclipse_active ? 1 : 2))
+    opponent.life_pool -= ((minion.attack_damage + totalAttackModifiers) * (match.eclipse_active ? 1 : 2))
 
     return []
 }
@@ -748,8 +711,8 @@ const updateEclipseTimer: EventEmitter = (match, actingPlayer, opponent, request
         if (match.eclipse_timer <= 0) {
             match.eclipse_active = true
 
-            match.player1.table_cards.length === 0 && (match.player1.life_pool -= ECLIPSE_PHASE_ENTERED_EMPTY_BOARD_DAMAGE)
-            match.player2.table_cards.length === 0 && (match.player2.life_pool -= ECLIPSE_PHASE_ENTERED_EMPTY_BOARD_DAMAGE)
+            match.player1.table_cards.length === 0 && (match.player1.life_pool -= constants.ECLIPSE_PHASE_ENTERED_EMPTY_BOARD_DAMAGE)
+            match.player2.table_cards.length === 0 && (match.player2.life_pool -= constants.ECLIPSE_PHASE_ENTERED_EMPTY_BOARD_DAMAGE)
 
             for (const minion of match.player1.table_cards) {
                 minion.attack_modifiers.push({ value: minion.attack_damage, source: 'eclipse_phase' })
@@ -772,8 +735,8 @@ const resetEclipseTimer: EventEmitter = (match, actingPlayer, opponent, request,
         if (!descriptorOnly) {
             match.eclipse_active = false
 
-            if (match.eclipse_current_max_count > ECLIPSE_TIMER_MIN_TURNS) {
-                match.eclipse_current_max_count -= ECLIPSE_RESET_TURNS_DISCOUNT
+            if (match.eclipse_current_max_count > constants.ECLIPSE_TIMER_MIN_TURNS) {
+                match.eclipse_current_max_count -= constants.ECLIPSE_RESET_TURNS_DISCOUNT
             }
 
             match.eclipse_timer = match.eclipse_current_max_count
@@ -816,7 +779,12 @@ function executeFunctions(match: MatchObject, player: MatchPlayer, opponent: Mat
             event.function(match, player, opponent, request, false, event)
         }
 
-        if (event.eventResult === 'died' && !event.source) {
+        if (event.eventResult === 'died' && event.source) {
+            for (const queueEvent of queue) {
+                queueEvent.target?.custom_properties.forEach((property, index, properties) => {
+                    property.source_card === event.source && !property.persist && properties.splice(index, 1)
+                })
+            }
         }
 
         for (const ability of event.source.abilities) {
