@@ -28,6 +28,10 @@ export const MINOR_RITUAL_DAMAGE = 3
 export const MODERATE_RITUAL_DAMAGE = 6
 export const MAJOR_RITUAL_DAMAGE = 8
 export const GRAND_RITUAL_DAMAGE = 10
+export const DARK_CONVERGENCE_DAMAGE = 3
+export const SOUL_HARVEST_CARDS_COUNT = 3
+export const BLOODBIND_HEAL_AMOUNT = 6
+export const ASHEN_STRIKE_DAMAGE = 4
 
 export const ECLIPSE_RESET_TURNS_DISCOUNT = 2
 export const ECLIPSE_PHASE_DAMAGE = 2

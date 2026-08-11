@@ -6,7 +6,6 @@ export type GeneratedEvent = {
     function?: (...args: any[]) => any
     player?: MatchPlayer
     opponent?: MatchPlayer
-    place?: 'hand' | 'table'
     source?: GameCard
     target?: GameCard
     eventData?: Record<string, any>
@@ -24,55 +23,68 @@ function swapPlayersMinions(match: MatchObject) {
     match.player2.table_cards = player1Cards
 }
 
-function swapMasterMinionsHealths(match: MatchObject) {
-    const player1MasterCards = match.player1.table_cards.filter(card => card.is_master)
-    const player2MasterCards = match.player2.table_cards.filter(card => card.is_master)
-}
-
 const RITUAL_SPELL_ACTIONS: EventEmitter[][] = [
     [// grand rituals
-        (match, actingPlayer, opponent, request) => {// annihilation (destroy every minion in the board)
-            for (const card of match.player1.table_cards) {
-                card.life_modifiers = []
-                card.life = 0
+        (match, actingPlayer, opponent, request, descriptorOnly, event) => {// annihilation (destroy every minion in the board)
+            const events: GeneratedEvent[] = []
+
+            if (descriptorOnly) {
+                for (const card of [...match.player1.table_cards, ...match.player2.table_cards]) {
+                    events.push({ eventResult: 'died', source: card, function: RITUAL_SPELL_ACTIONS[0][0] })
+                }
             }
-            for (const card of match.player2.table_cards) {
-                card.life_modifiers = []
-                card.life = 0
+            else {
+                event.source.life_modifiers = []
+                event.source.life = 0
             }
 
-            return []
+            return events
         },
 
-        (match, actingPlayer, opponent, request) => {// necromancy curse (ressurect all defeated minions back to hand)
-            const ressurectedCards = match.graveyard.map((card, index) => {
-                if (card.owner_id === actingPlayer.id) {
-                    match.graveyard.splice(index, 1)
-                    card.life = card.base_life
-                    card.mana_cost_modifiers = []
-                    card.life_modifiers = []
-                    card.attack_modifiers = []
-                    card.custom_properties = []
-                    return card
-                }
-            })
+        (match, actingPlayer, opponent, request, descriptorOnly, event) => {// necromancy curse (ressurect all defeated minions back to hand)
+            const events: GeneratedEvent[] = []
 
-            actingPlayer.hand_cards.push(...ressurectedCards)
+            if (descriptorOnly) {
+                match.graveyard.forEach(card => {
+                    if (card.owner_id === actingPlayer.id) {
+                        events.push({ eventResult: 'ressurected', source: card, player: actingPlayer, function: RITUAL_SPELL_ACTIONS[0][1] })
+                    }
+                })
+            }
+            else {
+                event.source.life = event.source.base_life
+                event.source.life_modifiers = []
+                event.source.attack_modifiers = []
+                event.source.mana_cost_modifiers = []
+                event.source.custom_properties = []
 
-            return []
+                actingPlayer.hand_cards.push(event.source)
+                match.graveyard.splice(match.graveyard.indexOf(event.source), 1)
+            }
+
+            return events
         },
     ],
 
 
 
     [// major rituals
-        (match, actingPlayer, opponent, request) => {// dark convergence (deal 3 damage to all enemy minions)
-            for (const card of opponent.table_cards) { card.life -= 3 }
+        (match, actingPlayer, opponent, request, descriptorOnly, event) => {// dark convergence (deal 3 damage to all enemy minions)
+            const events: GeneratedEvent[] = []
 
-            return []
+            if (descriptorOnly) {
+                for (const card of opponent.table_cards) {
+                    events.push({ eventResult: 'damaged', source: card, player: opponent, function: RITUAL_SPELL_ACTIONS[1][0] })
+                }
+            }
+            else {
+                event.source.life -= constants.DARK_CONVERGENCE_DAMAGE
+            }
+
+            return events
         },
 
-        (match, actingPlayer, opponent, request) => {// summon from the deep (pending, needs the card storage system of the database first. summons a rare card from outside the game)
+        (match, actingPlayer, opponent, request, descriptorOnly, event) => {// summon from the deep (pending, needs the card storage system of the database first. summons a rare card from outside the game)
             return []
         },
     ],
@@ -80,52 +92,87 @@ const RITUAL_SPELL_ACTIONS: EventEmitter[][] = [
 
 
     [// moderate rituals
-        (match, actingPlayer, opponent, request) => {// soul harvest (draw 3 cards)
-            actingPlayer.hand_cards.push(...actingPlayer.deck.splice(0, 3))
+        (match, actingPlayer, opponent, request, descriptorOnly, event) => {// soul harvest (draw 3 cards)
+            const events: GeneratedEvent[] = []
 
-            return []
+            if (descriptorOnly) {
+                for (let index = 0; index < constants.SOUL_HARVEST_CARDS_COUNT; index++) {
+                    events.push(
+                        { eventResult: 'card_drawn', player: actingPlayer, function: RITUAL_SPELL_ACTIONS[2][0] }
+                    )
+                }
+            }
+            else {
+                event.player.hand_cards.push(...event.player.deck.splice(0, 1))
+            }
+
+            return events
         },
 
-        (match, actingPlayer, opponent, request) => {// purge (destroy a random enemy minion)
-            const minion = opponent.table_cards[Math.round(Math.random() * opponent.table_cards.length)]
+        (match, actingPlayer, opponent, request, descriptorOnly, event) => {// purge (destroy a random enemy minion)
+            const events: GeneratedEvent[] = []
 
-            minion.life = 0
-            minion.life_modifiers = []
+            if (descriptorOnly) {
+                const minion = opponent.table_cards[Math.round(Math.random() * opponent.table_cards.length)]
 
-            return []
+                events.push({ eventResult: 'died', source: minion, player: opponent, function: RITUAL_SPELL_ACTIONS[2][1] })
+            }
+            else {
+                event.source.life_modifiers = []
+                event.source.life = 0
+            }
+
+            return events
         },
 
-        (match, actingPlayer, opponent, request) => {// rebirth (ressurect a random defeated minion)
-            const ownedDefeatedMinions = match.graveyard.filter(card => card.owner_id === actingPlayer.id)
-            const randomCard = ownedDefeatedMinions[Math.round(Math.random() * ownedDefeatedMinions.length)]
+        (match, actingPlayer, opponent, request, descriptorOnly, event) => {// rebirth (ressurect a random defeated minion)
+            const events: GeneratedEvent[] = []
 
-            actingPlayer.hand_cards.push(randomCard)
+            if (descriptorOnly) {
+                const ownedDefeatedMinions = match.graveyard.filter(card => card.owner_id === actingPlayer.id)
+                const randomMinion = ownedDefeatedMinions[Math.round(Math.random() * ownedDefeatedMinions.length)]
 
-            match.graveyard.forEach((card, index) => {
-                if (card == randomCard) match.graveyard.splice(index, 1)
-            })
+                if (randomMinion) (events.push({ eventResult: 'ressurected', source: randomMinion, player: actingPlayer, function: RITUAL_SPELL_ACTIONS[2][2] }))
+            }
+            else {
+                event.player.hand_cards.push(event.source)
+                match.graveyard.splice(match.graveyard.indexOf(event.source), 1)
+            }
 
-            return []
+            return events
         },
     ],
 
 
 
     [// minor rituals
-        (match, actingPlayer, opponent, request) => {// bloodbind (restore the soul vessel life by 6)
-            actingPlayer.soul_vessel_life += 6
+        (match, actingPlayer, opponent, request, descriptorOnly, event) => {// bloodbind (restore the soul vessel life by 6)
+            const events: GeneratedEvent[] = []
 
-            if (actingPlayer.soul_vessel_life > 20) actingPlayer.soul_vessel_life = 20
+            if (descriptorOnly) {
+                events.push({ eventResult: 'event', player: actingPlayer, function: RITUAL_SPELL_ACTIONS[3][0] })
+            }
+            else {
+                event.player.soul_vessel_life += constants.BLOODBIND_HEAL_AMOUNT
+                if (event.player.soul_vessel_life > 20) event.player.soul_vessel_life = 20
+            }
 
-            return []
+            return events
         },
 
-        (match, actingPlayer, opponent, request) => {// ashen strike (deal 4 damage to a random enemy minion)
-            const randomTarget = opponent.table_cards[Math.round(Math.random() * opponent.table_cards.length)]
+        (match, actingPlayer, opponent, request, descriptorOnly, event) => {// ashen strike (deal 4 damage to a random enemy minion)
+            const events: GeneratedEvent[] = []
 
-            randomTarget.life -= 4
+            if (descriptorOnly) {
+                const randomTarget = opponent.table_cards[Math.round(Math.random() * opponent.table_cards.length)]
+                events.push({ eventResult: 'damaged', source: randomTarget, player: opponent, function: RITUAL_SPELL_ACTIONS[3][1] })
+            }
+            else {
+                event.source.life -= constants.ASHEN_STRIKE_DAMAGE
+                if (event.player.soul_vessel_life > 20) event.player.soul_vessel_life = 20
+            }
 
-            return []
+            return events
         },
     ],
 ]
@@ -520,17 +567,17 @@ const checkForWinnerByDepletedLifePool: EventEmitter = (match, actingPlayer, opp
     const opponentLifePool = opponent.life_pool || opponent.soul_vessel_life as number
 
     if (playerLifePool <= 0 && opponentLifePool <= 0) {
-        if (!descriptorOnly) [match.both_players_lost = true]
+        if (!descriptorOnly) match.both_players_lost = true
         return [{ eventResult: 'won_match', function: checkForWinnerByDepletedLifePool }]
     }
 
     else if (playerLifePool <= 0) {
-        if (!descriptorOnly) { match.winner_id = opponent.id }
+        if (!descriptorOnly) match.winner_id = opponent.id
         return [{ eventResult: 'won_match', player: opponent, function: checkForWinnerByDepletedLifePool }]
     }
 
     else if (opponentLifePool <= 0) {
-        if (!descriptorOnly) { match.winner_id = actingPlayer.id }
+        if (!descriptorOnly) match.winner_id = actingPlayer.id
         return [{ eventResult: 'won_match', player: actingPlayer, function: checkForWinnerByDepletedLifePool }]
     }
 
@@ -640,14 +687,16 @@ const sacrificeCard: EventEmitter = (match, actingPlayer, opponent, request, des
 
 
 const castRitualSpell: EventEmitter = (match, actingPlayer, opponent, request, descriptorOnly, event) => {
-    if (descriptorOnly) return [{ eventResult: 'spell_cast', player: actingPlayer, function: castRitualSpell }]
+    const events: GeneratedEvent[] = []
+
+    if (descriptorOnly) events.push({ eventResult: 'spell_cast', player: actingPlayer, function: castRitualSpell })
 
     const energy = actingPlayer.ritual_energy
 
     if (energy >= constants.GRAND_RITUAL_ENERGY_THRESHOLD) {
         const randomIndex = Math.round(Math.random())
 
-        RITUAL_SPELL_ACTIONS[0][randomIndex](match, actingPlayer, opponent, request)
+        RITUAL_SPELL_ACTIONS[0][randomIndex](match, actingPlayer, opponent, request, descriptorOnly, event)
 
         damageSoulVesselAndDepleteEnergy(actingPlayer, opponent, constants.GRAND_RITUAL_ENERGY_THRESHOLD, constants.GRAND_RITUAL_DAMAGE)
     }
@@ -655,7 +704,7 @@ const castRitualSpell: EventEmitter = (match, actingPlayer, opponent, request, d
     else if (energy >= constants.MAJOR_RITUAL_ENERGY_THRESHOLD) {
         const randomIndex = Math.round(Math.random())
 
-        RITUAL_SPELL_ACTIONS[1][randomIndex](match, actingPlayer, opponent, request)
+        RITUAL_SPELL_ACTIONS[1][randomIndex](match, actingPlayer, opponent, request, descriptorOnly, event)
 
         damageSoulVesselAndDepleteEnergy(actingPlayer, opponent, constants.MAJOR_RITUAL_ENERGY_THRESHOLD, constants.MAJOR_RITUAL_DAMAGE)
     }
@@ -663,7 +712,7 @@ const castRitualSpell: EventEmitter = (match, actingPlayer, opponent, request, d
     else if (energy >= constants.MODERATE_RITUAL_ENERGY_THRESHOLD) {
         const randomIndex = Math.floor(Math.random() * 3)
 
-        RITUAL_SPELL_ACTIONS[2][randomIndex](match, actingPlayer, opponent, request)
+        RITUAL_SPELL_ACTIONS[2][randomIndex](match, actingPlayer, opponent, request, descriptorOnly, event)
 
         damageSoulVesselAndDepleteEnergy(actingPlayer, opponent, constants.MODERATE_RITUAL_ENERGY_THRESHOLD, constants.MODERATE_RITUAL_DAMAGE)
     }
@@ -671,12 +720,12 @@ const castRitualSpell: EventEmitter = (match, actingPlayer, opponent, request, d
     else if (energy >= constants.MINOR_RITUAL_ENERGY_THRESHOLD) {
         const randomIndex = Math.round(Math.random())
 
-        RITUAL_SPELL_ACTIONS[3][randomIndex](match, actingPlayer, opponent, request)
+        RITUAL_SPELL_ACTIONS[3][randomIndex](match, actingPlayer, opponent, request, descriptorOnly, event)
 
         damageSoulVesselAndDepleteEnergy(actingPlayer, opponent, constants.MINOR_RITUAL_ENERGY_THRESHOLD, constants.MINOR_RITUAL_DAMAGE)
     }
 
-    return []
+    return events
 }
 
 
@@ -779,7 +828,7 @@ function executeFunctions(match: MatchObject, player: MatchPlayer, opponent: Mat
             event.function(match, player, opponent, request, false, event)
         }
 
-        if (event.eventResult === 'died' && event.source) {
+        if (event.eventResult === 'died') {
             for (const queueEvent of queue) {
                 queueEvent.target?.custom_properties.forEach((property, index, properties) => {
                     property.source_card === event.source && !property.persist && properties.splice(index, 1)

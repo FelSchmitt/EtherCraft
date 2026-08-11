@@ -116,4 +116,4 @@ export type MoveRequest = {
 
 export type EventResult = 'turn_changed' | 'summoned' | 'died' | 'ressurected' | 'attacked' | 'damaged' | 'card_drawn' |
     'won_match' | 'ability_triggered' | 'chose_hero' | 'chose_card' | 'dice_and_coin_reset' | 'chaos_effects_applied' | 'chaos_effects_reset'
-    | 'card_sacrificed' | 'spell_cast' | 'attacked_life_pool' | 'eclipse_timer_countdown' | 'eclipse_began' | 'eclipse_ended' | 'minion_enabled_attack' | 'any'
+    | 'card_sacrificed' | 'spell_cast' | 'attacked_life_pool' | 'eclipse_timer_countdown' | 'eclipse_began' | 'eclipse_ended' | 'minion_enabled_attack' | 'event'
