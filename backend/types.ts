@@ -7,7 +7,7 @@ export type playerIdentifiers = {
 
 
 
-export type CardRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'titan' | 'colossus'
+export type CardRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'titanic' | 'colossal'
 
 
 
