@@ -16,7 +16,18 @@ export type RitualSpellName = 'bloodbind' | 'ashen_strike' | 'soul_harvest' | 'p
 
 
 
-type StatusModifier = { value: number, source: string }
+export type StatusModifier = { value: number, source: string | GameCard }
+
+export type AbilityDescription = {
+    functionReferences: {
+        index: number,
+        matchArray: 'graveyard',
+        matchNumberProperty: 'action_die' | 'fate_die' | 'reversal_coin',
+        playerArray: 'deck' | 'hand_cards' | 'table_cards'
+    },
+    trigger: EventResult,
+    replace_default_event: boolean
+}
 
 export type GameCard = {
     card_id: string
@@ -30,9 +41,9 @@ export type GameCard = {
     attack_damage: number
     attack_modifiers: StatusModifier[]
     can_attack: boolean
-    classes: {name: string, function?: Function, trigger?: EventResult}[]
-    abilities: { function: Function, trigger: EventResult, replace_default_event: boolean }[]
-    custom_properties: { persist: boolean, source_card?: GameCard, properties: any[] }[] // used by the special abilities of itself and other cards
+    classes: { name: string, functionIndex?: number, trigger?: EventResult }[]
+    abilities: AbilityDescription[]
+    custom_properties: { persist: boolean, source?: GameCard, properties: any[] }[] // used by the special abilities of itself and other cards
     rarity: CardRarity
     is_hero?: boolean
     is_master?: boolean

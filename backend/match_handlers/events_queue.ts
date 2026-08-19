@@ -1,5 +1,6 @@
-import { MatchObject, MatchPlayer, MoveRequest, GameMode, MoveAction, GameCard, ChaosEffectName, EventResult } from '../types'
+import { MatchObject, MatchPlayer, MoveRequest, GameMode, MoveAction, GameCard, ChaosEffectName, EventResult, StatusModifier } from '../types'
 import * as constants from './mode_constants'
+import { abilitiesFunctions } from './abilities_functions'
 
 export type GeneratedEvent = {
     eventResult: EventResult
@@ -21,6 +22,17 @@ function swapPlayersMinions(match: MatchObject) {
 
     match.player1.table_cards = player2Cards
     match.player2.table_cards = player1Cards
+}
+
+function statusModifiers(status: StatusModifier[], operation: 'add' | 'remove', modifier?: StatusModifier, source?: string | GameCard) {
+    if (operation === 'add') {
+        status.push(modifier)
+    }
+    else {
+        status.forEach((object, index) => {
+            object.source === source && status.splice(index, 1)
+        })
+    }
 }
 
 const RITUAL_SPELL_ACTIONS: EventEmitter[][] = [
@@ -256,17 +268,17 @@ const summonMinion: EventEmitter = (match, actingPlayer, opponent, request, desc
     }
 
     if (match.action_die === constants.ACTION_DIE_DOUBLE_DAMAGE && !match.double_damage_bonus_used) {
-        event.source.attack_modifiers.push({ value: event.source.attack_damage, source: 'destiny_action_die' })
+        statusModifiers(event.source.attack_modifiers, 'add', { value: event.source.attack_damage, source: 'destiny_action_die' })
         match.double_damage_bonus_used = true
     }
 
     if (match.action_die === constants.ACTION_DIE_LESS_MANA_COST) {
-        event.source.mana_cost_modifiers.push({ value: -constants.ACTION_DIE_MANA_DISCOUNT, source: 'destiny_action_die' })
+        statusModifiers(event.source.mana_cost_modifiers, 'add', { value: -constants.ACTION_DIE_MANA_DISCOUNT, source: 'destiny_action_die' })
     }
 
     if (match.mode === 'eclipse' && match.eclipse_active) {
-        event.source.attack_modifiers.push({ value: event.source.attack_damage, source: 'eclipse_phase' })
-        event.source.life_modifiers.push({ value: event.source.life, source: 'eclipse_phase' })
+        statusModifiers(event.source.attack_modifiers, 'add', { value: event.source.attack_damage, source: 'eclipse_phase' })
+        statusModifiers(event.source.life_modifiers, 'add', { value: event.source.life, source: 'eclipse_phase' })
     }
 
     actingPlayer.table_cards.push(event.source)
@@ -330,11 +342,11 @@ const attackMinion: EventEmitter = (match, actingPlayer, opponent, request, desc
     }
 
     else if (match.current_chaos_effects.includes('surge')) {
-        event.target.life -= event.source.attack_damage + totalAttackModifiers + constants.CHAOS_SURGE_ATTACK_BONUS
+        event.target.life -= (event.source.attack_damage + totalAttackModifiers + constants.CHAOS_SURGE_ATTACK_BONUS)
     }
 
     else {
-        event.target.life -= event.source.attack_damage + totalAttackModifiers
+        event.target.life -= (event.source.attack_damage + totalAttackModifiers)
     }
 
     return []
@@ -613,13 +625,8 @@ const resetDiceAndCoin: EventEmitter = (match, actingPlayer, opponent, request, 
     match.double_damage_bonus_used = false
 
     match[match.current_turn_player].table_cards.forEach(minion => {
-        minion.attack_modifiers.forEach((modifier, index) => {
-            if (modifier.source === 'destiny_action_die') minion.attack_modifiers.splice(index, 1)
-        })
-
-        minion.mana_cost_modifiers.forEach((modifier, index) => {
-            if (modifier.source === 'destiny_action_die') minion.mana_cost_modifiers.splice(index, 1)
-        })
+        statusModifiers(minion.attack_modifiers, 'remove', null, 'destiny_action_die')
+        statusModifiers(minion.mana_cost_modifiers, 'remove', null, 'destiny_action_die')
     })
 
     match.action_die = Math.ceil(Math.random() * 6)
@@ -790,24 +797,9 @@ const resetEclipseTimer: EventEmitter = (match, actingPlayer, opponent, request,
 
             match.eclipse_timer = match.eclipse_current_max_count
 
-            for (const minion of match.player1.table_cards) {
-                minion.attack_modifiers.forEach((modifier, index) => {
-                    modifier.source === 'eclipse_phase' && minion.attack_modifiers.splice(index, 1)
-                })
-
-                minion.life_modifiers.forEach((modifier, index) => {
-                    modifier.source === 'eclipse_phase' && minion.life_modifiers.splice(index, 1)
-                })
-            }
-
-            for (const minion of match.player2.table_cards) {
-                minion.attack_modifiers.forEach((modifier, index) => {
-                    modifier.source === 'eclipse_phase' && minion.attack_modifiers.splice(index, 1)
-                })
-
-                minion.life_modifiers.forEach((modifier, index) => {
-                    modifier.source === 'eclipse_phase' && minion.life_modifiers.splice(index, 1)
-                })
+            for (const minion of [...match.player1.table_cards, ...match.player2.table_cards]) {
+                statusModifiers(minion.attack_modifiers, 'remove', null, 'eclipse_phase')
+                statusModifiers(minion.life_modifiers, 'remove', null, 'eclipse_phase')
             }
         }
 
@@ -824,24 +816,30 @@ const resetEclipseTimer: EventEmitter = (match, actingPlayer, opponent, request,
 
 function executeFunctions(match: MatchObject, player: MatchPlayer, opponent: MatchPlayer, request: MoveRequest, queue: GeneratedEvent[], event: GeneratedEvent) {
     if (event.source) {
-        if (!event.source.abilities.some(ability => ability.replace_default_event) && event.function) {
-            event.function(match, player, opponent, request, false, event)
-        }
-
         if (event.eventResult === 'died') {
-            for (const queueEvent of queue) {
-                queueEvent.target?.custom_properties.forEach((property, index, properties) => {
-                    property.source_card === event.source && !property.persist && properties.splice(index, 1)
+            const cards = [...match.player1.hand_cards, ...match.player1.table_cards, ...match.player2.hand_cards, ...match.player2.table_cards]
+
+            for (const card of cards) {
+                statusModifiers(card.life_modifiers, 'remove', null, event.source)
+                statusModifiers(card.attack_modifiers, 'remove', null, event.source)
+                statusModifiers(card.mana_cost_modifiers, 'remove', null, event.source)
+
+                card.custom_properties.forEach((property, index, properties) => {
+                    !property.persist && property.source === event.source && properties.splice(index, 1)
                 })
             }
         }
 
+        if (!event.source.abilities.some(ability => ability.replace_default_event) && event.function) {
+            event.function(match, player, opponent, request, false, event)
+        }
+
         for (const ability of event.source.abilities) {
-            event.eventResult === ability.trigger && !(match.current_chaos_effects?.includes('silence')) && ability.function(match, player, opponent, queue, event)
+            event.eventResult === ability.trigger && !(match.current_chaos_effects?.includes('silence')) && abilitiesFunctions
         }
 
         for (const minionClass of event.source.classes) {
-            event.eventResult === minionClass.trigger && minionClass.function(event.source, event.target, event.eventResult)
+            event.eventResult === minionClass.trigger && 'class functions pending'
         }
     }
 
@@ -854,7 +852,7 @@ function executeFunctions(match: MatchObject, player: MatchPlayer, opponent: Mat
             }
 
             for (const ability of card.abilities) {
-                event.eventResult === ability.trigger && !(match.current_chaos_effects?.includes('silence')) && ability.function(match, player, opponent, queue, event)
+                event.eventResult === ability.trigger && !(match.current_chaos_effects?.includes('silence')) && abilitiesFunctions
             }
         }
     }

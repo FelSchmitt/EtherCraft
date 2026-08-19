@@ -17,14 +17,14 @@ CREATE TABLE game_cards (
   attack_damage      int          NOT NULL,
   mana_cost          int          NOT NULL,
   rarity             varchar(10)  NOT NULL,
-  abilities          jsonb[], -- each entry: { "name": "...", "description": "...", "trigger": "summoned | card_drawn | damaged | turn_changed", "function": "*code as string to execute*", "replace_default_event": false | true }
+  abilities          jsonb[], -- each entry: { "name": "...", "description": "...", "trigger": *some action from the server: 'summoned', 'turn_changed', 'damaged', etc.*, "function_references": {...}, "replace_default_event": false | true }
   geometry_variation decimal(2, 0) -- only to reference one of the 3d models in the frontend for different styles
 );
 
 -- Which registered classes each card has
 CREATE TABLE card_classes (
-  card_id     varchar(20) NOT NULL REFERENCES game_cards(card_id) ON DELETE CASCADE,
-  class_id    varchar(20) NOT NULL REFERENCES game_classes(class_id) ON DELETE CASCADE,
+  card_id     varchar(20) NOT NULL REFERENCES game_cards(card_id),
+  class_id    varchar(20) NOT NULL REFERENCES game_classes(class_id),
   PRIMARY KEY (card_id, class_id)
 )
 
@@ -49,7 +49,6 @@ CREATE TABLE users (
 CREATE TABLE user_cards (
   account_id  varchar(20) NOT NULL REFERENCES users(account_id) ON DELETE CASCADE,
   card_id     varchar(20) NOT NULL REFERENCES game_cards(card_id),
-  count       int         NOT NULL DEFAULT 1,
   discovered  boolean     NOT NULL DEFAULT false,
   PRIMARY KEY (account_id, card_id)
 );

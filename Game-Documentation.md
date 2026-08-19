@@ -9,11 +9,11 @@
 
 - Titanic and Colossal card types are the most appealing in the game, have huge health and attack damage by default. Titan Cards are inspired on elements and the forces of nature: oceans, winds, lightnings, volcanoes, tectonic plates, the sun, etc. On the other hand, Colossus Cards are biologically themed: Giant beasts of flesh and bones, tree trunks and vegetal matter that serve as organs, flesh in symbiosis with fungus colonies, etc. When receiving high damage from an enemy card, Titan Cards can split their health and force to create smaller ones (e.g. a legendary card, two epic cards or multiple common ones). Colossus Cards regenerate health in some situations. All titanic cards have the **Elemental** class.
 
-- A card can or not have a special ability. Abilities can activate when drawn from the deck to the player's hand, when it's thrown on the table, damaged or the turn pass to the opponent, back to the player or after a certain amount of times. Common and Uncommon cards have no abilities, but Rare types onward can have one, or even two if they are Legendary or higher rarity.
+- A card can or not have a special ability. Abilities can activate when drawn from the deck to the player's hand, when it's thrown on the table, damaged or the turn pass to the opponent, back to the player or after a certain amount of times. Common and Uncommon cards have no abilities, but Rare types onward can have one, or even two or three if they are Legendary or higher rarity.
 
 - Cards have also Classes, which make their interactions more dynamic. The classes of a card influence the damage dealt to cards of other specific classes, the damage received from certain classes, the special abilities of other cards or do nothing at all, serving merely as a tag. A card can have one or more classes regardless of its rarity.
 
-- **Defensive** is a special class, which makes cards able to prevent enemies to target cards "behind" it, so enemies must destroy defensive minions in the way to attack the vulnerable target (the player or other life pool that upon depletion defines victory).
+- **Guard** is a special class, which makes cards able to prevent enemies to target others "behind" it, so enemies must destroy guard minions in the way to attack the vulnerable target (the player or other life pool that upon depletion defines victory).
 <br />
 
 ## Account Profiles
@@ -111,7 +111,7 @@
 
 - **Chaos Phase**: At the very start of each turn (before the active player does anything), the top card of the Chaos Deck is flipped and its effect is immediately applied to the board for the entirety of that turn only, unless the effect explicitly says it persists.
 
-- **Restrictions**: The Defensive class does not have effect on this mode since the Defense Zone already does this.
+- **Restrictions**: The Guard class does not have effect on this mode since the Defense Zone already does this.
 
 - **Chaos Effects (what can appear in the deck)**:
   - *Earthquake*: All minions on both sides lose 2 health. Minions that reach zero are destroyed.
@@ -177,6 +177,6 @@
 
 - **Resetting the Timer**: A player can delay the Eclipse by destroying **all** enemy minions in a single turn (using attacks, spells via card abilities, or any combination). If they do, the Eclipse Timer resets to **10 turns** (not the original 12). The timer can be reset multiple times, but each reset gives 2 less turns until a minimum of 2 turns, creating escalating pressure.
 
-- **Strategic implications**: Because there is no Hero Card to protect, every minion on the board is simultaneously an attacker and the only thing standing between the opponent's minions and the Life Pool. Defensive strategies centered on one powerful card are meaningless here — board presence is the only form of defense. The Eclipse Phase punishes anyone who falls behind on board state doubly: first through the doubled minions attacking the exposed Life Pool, and then through the bonus damage for having an empty board.
+- **Strategic implications**: Because there is no Hero Card to protect, every minion on the board is simultaneously an attacker and the only thing standing between the opponent's minions and the Life Pool. defensive strategies centered on one powerful card are meaningless here — board presence is the only form of defense. The Eclipse Phase punishes anyone who falls behind on board state doubly: first through the doubled minions attacking the exposed Life Pool, and then through the bonus damage for having an empty board.
 
 - **Victory**: The first player to reduce the opponent's Life Pool to 0 wins. Unlike other modes where damage must route through specific targets, Eclipse matches are decided entirely by board control — whoever commands the board commands the game.

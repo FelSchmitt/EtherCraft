@@ -49,20 +49,6 @@ export default function GameScreen() {
         const inputs: NodeListOf<HTMLInputElement> = document.querySelectorAll('.vectorinput')
 
         loader.load(
-            'models/tavern_background_default.glb',
-            function (gltf) {
-                gltf.scene.name = 'tavern'
-                scene.add(gltf.scene)
-                console.log('tavern loaded')
-            },
-            function (progress) { },
-            function (error) {
-                console.error(error)
-                alert(`tavern model failed: ${error}`)
-            }
-        )
-
-        loader.load(
             'models/game_table.glb',
             function (gltf) {
                 gltf.scene.name = 'table'

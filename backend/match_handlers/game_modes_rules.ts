@@ -66,10 +66,10 @@ const targetExistsOnOpponentBoard: Validator = (match, requestingPlayer, opponen
 
 
 
-const defensiveMustBeTargetedFirst: Validator = (match, requestingPlayer, opponent, request) => {
-    const defensive = opponent.table_cards.filter(card => card.classes.some(cardClass => cardClass.name === 'defensive'))
+const guardsMustBeTargetedFirst: Validator = (match, requestingPlayer, opponent, request) => {
+    const defensive = opponent.table_cards.filter(card => card.classes.some(cardClass => cardClass.name === 'guard'))
 
-    return defensive.length === 0 ? pass : fail('Must destroy defensive minions before targeting others')
+    return defensive.length === 0 ? pass : fail('Must destroy guard minions before targeting others')
 }
 
 
@@ -134,12 +134,12 @@ const skipAttacksConstraint: Validator = (match, requestingPlayer, opponent, req
 
 const rules: Partial<Record<`${GameMode}:${MoveAction}`, Validator[]>> = {
     'classic:throw_onto_table': [isTurn, cardInHand, hasMana, boardLimit(7)],
-    'classic:attack_minion': [isTurn, attackerOnBoard, attackerCanAttack, hasTargetUuid, targetExistsOnOpponentBoard, defensiveMustBeTargetedFirst],
+    'classic:attack_minion': [isTurn, attackerOnBoard, attackerCanAttack, hasTargetUuid, targetExistsOnOpponentBoard, guardsMustBeTargetedFirst],
     'classic:end_turn': [isTurn],
     'classic:choose_hero_minion': [cardInHandForHeroSelection],
 
     'destiny:throw_onto_table': [isTurn, cardInHand, hasMana, onlyOneCardConstraint, boardLimit(7)],
-    'destiny:attack_minion': [isTurn, attackerOnBoard, attackerCanAttack, hasTargetUuid, targetExistsOnOpponentBoard, skipAttacksConstraint, belowAttackDamageConstraint, defensiveMustBeTargetedFirst],
+    'destiny:attack_minion': [isTurn, attackerOnBoard, attackerCanAttack, hasTargetUuid, targetExistsOnOpponentBoard, skipAttacksConstraint, belowAttackDamageConstraint, guardsMustBeTargetedFirst],
     'destiny:end_turn': [isTurn],
     'destiny:choose_hero_minion': [cardInHandForHeroSelection],
 
@@ -148,19 +148,19 @@ const rules: Partial<Record<`${GameMode}:${MoveAction}`, Validator[]>> = {
     'chaos:end_turn': [isTurn],
 
     'ritual:throw_onto_table': [isTurn, cardInHand, hasMana, boardLimit(8)],
-    'ritual:attack_minion': [isTurn, attackerOnBoard, attackerCanAttack, hasTargetUuid, targetExistsOnOpponentBoard, defensiveMustBeTargetedFirst],
+    'ritual:attack_minion': [isTurn, attackerOnBoard, attackerCanAttack, hasTargetUuid, targetExistsOnOpponentBoard, guardsMustBeTargetedFirst],
     'ritual:end_turn': [isTurn],
     'ritual:sacrifice_card': [isTurn, cardInHand, cardCanBeSacrificed, ritualEnergyIsFull],
     'ritual:cast_ritual_spell': [isTurn, hasMinimumEnergy],
 
     'dungeon_run:throw_onto_table': [isTurn, cardInHand, hasMana, boardLimit(7)],
-    'dungeon_run:attack_minion': [isTurn, attackerOnBoard, attackerCanAttack, hasTargetUuid, targetExistsOnOpponentBoard, defensiveMustBeTargetedFirst],
+    'dungeon_run:attack_minion': [isTurn, attackerOnBoard, attackerCanAttack, hasTargetUuid, targetExistsOnOpponentBoard, guardsMustBeTargetedFirst],
     'dungeon_run:end_turn': [isTurn],
     'dungeon_run:choose_hero_minion': [cardInHandForHeroSelection],
 
     'eclipse:throw_onto_table': [isTurn, cardInHand, hasMana, boardLimit(7)],
     'eclipse:attack_minion': [isTurn, attackerOnBoard, attackerCanAttack, hasTargetUuid, targetExistsOnOpponentBoard],
-    'eclipse:attack_life_pool': [isTurn, attackerOnBoard, attackerCanAttack, opponentHasLifePool, defensiveMustBeTargetedFirst],
+    'eclipse:attack_life_pool': [isTurn, attackerOnBoard, attackerCanAttack, opponentHasLifePool, guardsMustBeTargetedFirst],
     'eclipse:end_turn': [isTurn],
 }
 
